@@ -5,7 +5,7 @@ MODULE_DIR = ".cenv"
 
 CONFIG_FILENAME = "config.ini"
 
-EXTENSION = "extension_name"
+EXTENSION = "extension"
 
 class InvalidConfigError(Exception):
     """Raised when a config value does not exist in the configuration."""
@@ -26,12 +26,19 @@ class YthonConfigParser(ConfigParser):
             raise InvalidConfigError(f"No value 'extension' can be found in {CONFIG_FILENAME}.")
         return self['DEFAULT'][EXTENSION]
     
-    def set(self, key: str, val):
-        self['DEFAULT'][key][val]
+    def set_default(self, key: str, val: str):
+        if key in self['DEFAULT']:
+            self['DEFAULT'][key] = val
+        else:
+            raise ValueError(f"Key {key} is not contained in 'DEFAULT'.")
     
     def write(self):
-        with open(self.config_file, 'r') as cf:
+        with open(self.config_file, 'w') as cf:
             super().write(cf)
+    
+    def restore(self):
+        self.config_file.unlink(True)
+        init_config_settings(self.config_file)
     
 def init_config_settings(file: Path):
     file.parent.mkdir(parents=True, exist_ok=True)

@@ -7,10 +7,12 @@ from pegen.python_generator import PythonParserGenerator
 from pegen.utils import parse_string
 
 def get_python_grammar() -> Grammar:
+    """Returns the base Python grammar as a Grammar object. Base Grammar is loaded from pegen's python.gram file."""
     with open("python.gram", 'r') as gf:
         src = gf.read()
         grammar = parse_string(src, GrammarParser)
-        
+    return grammar
+
 def generate_ython_parser(grammar: Grammar, path: str = None):
     out = io.StringIO()
     genr = PythonParserGenerator(grammar, out)

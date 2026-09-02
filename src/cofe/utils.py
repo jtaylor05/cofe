@@ -1,6 +1,8 @@
 import io
 from typing import Dict, Any, Type
 
+from pathlib import Path
+
 from pegen.grammar import Grammar
 from pegen.grammar_parser import GeneratedParser as GrammarParser
 from pegen.parser import Parser
@@ -9,7 +11,7 @@ from pegen.utils import parse_string
 
 def get_python_grammar() -> Grammar:
     """Returns the base Python grammar as a Grammar object. Base Grammar is loaded from pegen's python.gram file."""
-    with open("python.gram", 'r') as gf:
+    with open(Path(__file__).parent/"python.gram", 'r') as gf:
         src = gf.read()
         grammar = parse_string(src, GrammarParser)
     return grammar

@@ -88,12 +88,16 @@ class GrammarWrapper(Grammar):
         self.set_type_name(type(leaf), leaf.value, new_value)
     
     def set_type_name(self, type: Type, value: str, new_value:str):
-        key = (type, value)
+        key, new_key = (type, value), (type, new_value)
         if key not in self.names:
             raise ValueError(f"Leaves of type {type} and value {value} not in nametable.")
+        if new_key in self.names:
+            raise ValueError(f"Leaves of type {type} and value {new_value} already in nametable.")
         
         for node in self.names[key]:
             node.value = new_value
+        
+        self.names[new_key] = self.names.pop(key)
     
     def __str__(self) -> str:
         return self.grammar.__str__()

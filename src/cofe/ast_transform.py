@@ -113,7 +113,8 @@ class AggregateTransformer(ast.NodeTransformer):
     def aggregate_wrapper(self, transformers: list[ASTTransformer]):
         def wrapper(node: ASTNode) -> ASTNode:
             for t in transformers:
-                node = t.func_wrapper(node)
+                node = t.apply(node)
+            self.generic_visit(node)
             return node
         return wrapper
     
@@ -129,9 +130,7 @@ class AggregateImportTransformer(AggregateTransformer):
 if __name__=="__main__":
     src = """
 def foo(a, b):
-    return a+b
-    
-print(foo(1, 2))
+    return foo(a-1, b)
     """
     
     src_error = """

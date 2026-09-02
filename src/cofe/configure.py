@@ -11,7 +11,7 @@ class InvalidConfigError(Exception):
     """Raised when a config value does not exist in the configuration."""
     pass
 
-class YthonConfigParser(ConfigParser):
+class PackageConfigParser(ConfigParser):
     def __init__(self, directory: str = MODULE_DIR, config_file: str = CONFIG_FILENAME):
         super().__init__()
         self.config_file = Path(directory, config_file).resolve()

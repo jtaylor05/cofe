@@ -3,13 +3,13 @@ import sys
 import importlib.machinery
 from pathlib import Path
 
-from .configure import YthonConfigParser
+from .configure import PackageConfigParser
 
 class PreProcessExtensionLoader(importlib.machinery.SourceFileLoader):
     def get_data(self, path):
         # Gets file's bytes at path.
         
-        config = YthonConfigParser()
+        config = PackageConfigParser()
         
         raw = super().get_data(path)
         
@@ -24,7 +24,7 @@ class PreProcessExtensionLoader(importlib.machinery.SourceFileLoader):
         return super().source_to_code(data, path, _optimize=_optimize)
 
 def install_import_hook():
-    config = YthonConfigParser()
+    config = PackageConfigParser()
     
     loader_details = (PreProcessExtensionLoader, [config.extension])
     path_hook = importlib.machinery.FileFinder.path_hook(loader_details)

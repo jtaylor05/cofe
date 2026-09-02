@@ -2,13 +2,13 @@ import sys
 
 import argparse as ap
 
-from . import PythonLauncher, YthonConfigParser, install_import_hook
+from . import PythonLauncher, PackageConfigParser, install_import_hook
 
 def config_command(raw_changes: list[str]):
     print("changes:", raw_changes)
     changes = {d[0]:d[1] for d in [c.split('=') for c in raw_changes]}
     
-    config = YthonConfigParser()
+    config = PackageConfigParser()
     for k,v in changes.items():
         config.set_default(k, v)
     
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     match args.command:
         case "config":
             if args.restore:
-                YthonConfigParser().restore()
+                PackageConfigParser().restore()
             if args.change:
                 config_command(args.change)
             

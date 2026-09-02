@@ -10,7 +10,7 @@ from .ast_transform import (
 )
 
 from .configure import (
-    YthonConfigParser, 
+    PackageConfigParser, 
     init_config_settings
 )
 

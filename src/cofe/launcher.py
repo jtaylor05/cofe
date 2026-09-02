@@ -2,7 +2,7 @@ import sys
 
 from pathlib import Path
 
-from .configure import YthonConfigParser
+from .configure import PackageConfigParser
 
 type PathLike = str | Path  
 type SysArgs = list[str]
@@ -12,8 +12,8 @@ class InvalidExtensionError(Exception):
     pass
 
 class PythonLauncher:
-    def __init__(self, file: PathLike, custom_config: YthonConfigParser = None):
-        self.config = custom_config if custom_config != None else YthonConfigParser()
+    def __init__(self, file: PathLike, custom_config: PackageConfigParser = None):
+        self.config = custom_config if custom_config != None else PackageConfigParser()
         
         if not Path(file).exists():
             raise FileExistsError(f"File {file} given to PythonLauncher does not exist.")

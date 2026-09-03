@@ -182,6 +182,8 @@ class ReplaceRuleBody(GrammarTransform):
                 f"fragment defines {fragment.name!r}, expected {self.rule_name!r}"
             )
         grammar.rules[self.rule_name].rhs = fragment.rhs
+        
+        wrapper.regather_names()  # new rule may have new leaves, so rebuild the nametable
  
  
 @dataclass
@@ -204,6 +206,7 @@ class InjectAlt(GrammarTransform):
             rule.rhs.alts = new_alts + rule.rhs.alts
         else:
             rule.rhs.alts = rule.rhs.alts + new_alts
+        wrapper.regather_names()  # new alt may have new leaves, so rebuild the nametable
  
 if __name__ == "__main__":
     from pegen.utils import generate_parser

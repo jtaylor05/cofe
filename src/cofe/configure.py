@@ -20,12 +20,16 @@ class InvalidConfigError(Exception):
 class PackageConfigParser(ConfigParser):
     def __init__(self, directory: str = MODULE_DIR, config_file: str = CONFIG_FILENAME):
         super().__init__()
+        self.optionxform = str
+        
         self.config_file = Path(directory, config_file).resolve()
         if not self.config_file.exists():
             init_config_settings(self.config_file)
         
         self.read(self.config_file)
         
+        if not self.has_section("env"):
+            self.add_section("env")
         if not self.has_section("available"):
             self.add_section("available")
         if not self.has_section("active"):
@@ -33,15 +37,15 @@ class PackageConfigParser(ConfigParser):
     
     @property
     def extension(self):
-        if EXTENSION not in self['DEFAULT']:
+        if EXTENSION not in self['env']:
             raise InvalidConfigError(f"No value 'extension' can be found in {CONFIG_FILENAME}.")
-        return self['DEFAULT'][EXTENSION]
+        return self['env'][EXTENSION]
     
     def set_default(self, key: str, val: str):
-        if key in self['DEFAULT']:
-            self['DEFAULT'][key] = val
+        if key in self['env']:
+            self['env'][key] = val
         else:
-            raise ValueError(f"Key {key} is not contained in 'DEFAULT'.")
+            raise ValueError(f"Key {key} is not contained in 'env'.")
         
     def add_transformer(self, cls_name: str, cls_file: Pathlike):
         self.set('available', cls_name, str(Path(cls_file)))
@@ -49,11 +53,8 @@ class PackageConfigParser(ConfigParser):
     def remove_transformer(self, cls_name: str):
         self.remove_option('available', cls_name)
         
-    def get_available(self) -> list[str]:
-        ret = set()
-        for cls_name in self['available']:
-            ret.add(self['available'][cls_name])
-        return list(ret)
+    def get_available(self) -> dict[str, str]:
+        return dict(self['available'])
         
     def add_active(self, cls_name: str):
         if cls_name not in self['available']:
@@ -67,11 +68,8 @@ class PackageConfigParser(ConfigParser):
         for cls_name in self['active']:
             self.remove_active(cls_name)
 
-    def get_active(self) -> list[str]:
-        ret = set()
-        for cls_name in self['active']:
-            ret.add(self['active'][cls_name])
-        return list(ret)
+    def get_active(self) -> dict[str, str]:
+        return dict(self['active'])
     
     def write(self):
         with open(self.config_file, 'w') as cf:
@@ -85,7 +83,7 @@ def init_config_settings(file: Path):
     file.parent.mkdir(parents=True, exist_ok=True)
     
     parser = ConfigParser()
-    parser['DEFAULT'] = { EXTENSION : '.y' }
+    parser['env'] = { EXTENSION : '.y' }
     parser['available'] = {}
     parser['active'] = {}
     with open(file, 'w') as cf:
@@ -104,7 +102,8 @@ class Transform:
     
     def apply_ast(self, root : ast.AST):
         pass
-        
+    
+    
     def get_sort(self):
         return 0
         

@@ -1,4 +1,4 @@
-import io
+import io, ast
 from typing import Dict, Any, Type
 
 from pathlib import Path
@@ -9,6 +9,8 @@ from pegen.parser import Parser
 from pegen.python_generator import PythonParserGenerator
 from pegen.utils import parse_string
 
+type ASTRoot = ast.AST
+
 def get_python_grammar() -> Grammar:
     """Returns the base Python grammar as a Grammar object. Base Grammar is loaded from pegen's python.gram file."""
     with open(Path(__file__).parent/"python.gram", 'r') as gf:
@@ -16,7 +18,7 @@ def get_python_grammar() -> Grammar:
         grammar = parse_string(src, GrammarParser)
     return grammar
 
-def generate_ython_parser(grammar: Grammar, path: str = None) -> Type[Parser]:
+def generate_ython_parser(grammar: Grammar) -> Type[Parser]:
     out = io.StringIO()
     genr = PythonParserGenerator(grammar, out)
     genr.generate("<string>")
@@ -26,7 +28,11 @@ def generate_ython_parser(grammar: Grammar, path: str = None) -> Type[Parser]:
     exec(out.getvalue(), ns)
     class_name = grammar.metas.get("class", "PythonParser")
     return ns[class_name]
+
+def parse_from_grammar(src: str, grammar: Grammar) -> ASTRoot:
+    prs = generate_ython_parser(grammar)
     
+    return parse_string(src, prs)
 
 # def generate_parser(
 #     grammar: Grammar, parser_path: Optional[str] = None, parser_name: str = "GeneratedParser"

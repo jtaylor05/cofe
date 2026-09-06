@@ -52,10 +52,16 @@ def randomize_active(n: int):
     
     config.clear_active()
     
-    selection = random.sample(config.get_available(), n)
+    
+    
+    classes = [k for k,_ in config.get_available().items()]
+    
+    selection = random.sample(classes, n)
     
     for s in selection:
         config.add_active(s)
+        
+    config.write()
     
 
 def exec_command(file_path: str, remainder: list[str]):
@@ -82,7 +88,7 @@ if __name__ == "__main__":
     config_parser.add_argument("-a", "--active", nargs='*', type=str, help="Add new active transformer class.")
     config_parser.add_argument("-v", "--remove-available", nargs='*', type=str, help="Remove transformer class from available.")
     config_parser.add_argument("-l", "--remove-active", nargs='*', type=str, help="Remove transformer class from active.")
-    config_parser.add_argument("-R", "--random", type=int, default=1, help="Randomize active transformers.")
+    config_parser.add_argument("-R", "--random", type=int, help="Randomize active transformers.")
     
     exec_parser = subparsers.add_parser("exec", help="acts as an entry point into module code.")
     exec_parser.add_argument("file_path", type=str)

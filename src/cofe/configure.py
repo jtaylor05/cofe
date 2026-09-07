@@ -26,7 +26,7 @@ def init_config_settings(file: Path):
         WhenTransformer.__name__:fp,
         PrintScreenTransformer.__name__:fp,
         SemiColonTransformer.__name__:fp,
-        BracesTransformer.__name__:fp
+        DoEndTransformer.__name__:fp
     }
     
     parser['active'] = {}
@@ -171,13 +171,12 @@ class PrintScreenTransformer(Transform):
     def apply_ast(self, root):
         self.name_t.visit(root)
         
-class BracesTransformer(Transform):
+class DoEndTransformer(Transform):
     def __init__(self):
         self.braces_t = ReplaceRuleBody("block", """block[list] (memo):
-    | '{' a=statements '}' { a }
-    | '{' simple_stmts '}'
-    | invalid_block)""")
+    | NEWLINE* 'do' NEWLINE* [INDENT] a=statements [DEDENT] 'end' NEWLINE* { a }
+    | simple_stmts
+    | invalid_block""")
         
     def apply_grammar(self, grammar):
         self.braces_t.apply(grammar)
-        print(grammar)

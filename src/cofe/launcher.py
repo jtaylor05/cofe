@@ -1,4 +1,4 @@
-import sys, ast
+import sys, ast, traceback
 from typing import Any, Type
 
 from importlib import util
@@ -56,7 +56,7 @@ class PythonLauncher:
         
         self.file = file
         
-    def launch(self):
+    def launch(self, debug=False):
         with open(self.file, 'r') as f:
             src = f.read()
         
@@ -66,8 +66,15 @@ class PythonLauncher:
             t.apply_grammar(grammar)
             
         #print(grammar)
-            
-        root = parse_from_grammar(src, grammar)
+        
+        root = None
+        try:
+            root = parse_from_grammar(src, grammar)
+        except Exception as e:
+            if debug:
+                raise e
+            else:
+                raise e.with_traceback(None)
         
         for t in self.transformers:
             t.apply_ast(root)
@@ -81,7 +88,18 @@ class PythonLauncher:
         
         print("=================EXECUTION BEGINS=================")
         
-        exec(code, globals=global_scope, locals=local_scope)
+        try:
+            exec(code, globals=global_scope, locals=local_scope)
+        except Exception as e:
+            if debug: raise e
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            
+            if exc_traceback and exc_traceback.tb_next:
+                clean_tb = exc_traceback.tb_next
+            else:
+                clean_tb = exc_traceback
+            traceback.print_exception(exc_type, exc_value, clean_tb)
+            
         
     def _file_has_valid_extension(self, file: PathLike):
         return Path(file).suffix == self.config.extension

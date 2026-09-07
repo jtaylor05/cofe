@@ -62,14 +62,14 @@ def randomize_active(n: int):
     config.write()
     
 
-def exec_command(file_path: str, remainder: list[str]):
+def exec_command(file_path: str, remainder: list[str], debug=False):
     sys.argv = [file_path] + remainder
     print(sys.argv)
     
     install_import_hook()
     
     launcher = PythonLauncher(file_path)
-    launcher.launch()
+    launcher.launch(debug)
 
 if __name__ == "__main__":
     parser = ap.ArgumentParser(
@@ -90,6 +90,7 @@ if __name__ == "__main__":
     
     exec_parser = subparsers.add_parser("exec", help="acts as an entry point into module code.")
     exec_parser.add_argument("file_path", type=str)
+    exec_parser.add_argument("--debug-cofe", action="store_true", help="A hook to include all of the stack in the traceback.")
     
     args, remainder = parser.parse_known_args()
     
@@ -111,6 +112,6 @@ if __name__ == "__main__":
                 randomize_active(args.random)
             
         case "exec":
-            exec_command(args.file_path, remainder)
+            exec_command(args.file_path, remainder, args.debug_cofe)
             
             

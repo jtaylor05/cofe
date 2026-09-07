@@ -52,8 +52,6 @@ def randomize_active(n: int):
     
     config.clear_active()
     
-    
-    
     classes = [k for k,_ in config.get_available().items()]
     
     selection = random.sample(classes, n)

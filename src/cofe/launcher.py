@@ -60,6 +60,8 @@ class PythonLauncher:
         for t in self.transformers:
             t.apply_grammar(grammar)
             
+        #print(grammar)
+            
         root = parse_from_grammar(src, grammar)
         
         for t in self.transformers:

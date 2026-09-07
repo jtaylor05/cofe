@@ -18,6 +18,8 @@ from .grammar_transform import (
     GrammarWrapper,
     GrammarTransform,
     RenameLeaf,
+    RenameNameLeaf,
+    RenameStringLeaf,
     RenameRule,
     ReplaceRuleBody,
     InjectAlt

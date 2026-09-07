@@ -3,9 +3,8 @@ from pathlib import Path
 
 import ast
 
-from .grammar_transform import GrammarWrapper, RenameLeaf, ReplaceRuleBody
-from .ast_transform import StrictCallTransformer
-from pegen.grammar import StringLeaf
+from cofe.grammar_transform import GrammarWrapper, RenameStringLeaf, ReplaceRuleBody
+from cofe.ast_transform import StrictCallTransformer
 
 MODULE_DIR = ".cenv"
 
@@ -14,6 +13,25 @@ CONFIG_FILENAME = "config.ini"
 EXTENSION = "extension"
 
 type Pathlike = str | Path
+
+def init_config_settings(file: Path):
+    file.parent.mkdir(parents=True, exist_ok=True)
+    
+    parser = ConfigParser()
+    parser.optionxform = str
+    parser['env'] = { EXTENSION : '.y' }
+    
+    fp = Path(__file__).resolve()
+    parser['available'] = {
+        WhenTransformer.__name__:fp,
+        PrintScreenTransformer.__name__:fp,
+        SemiColonTransformer.__name__:fp,
+        BracesTransformer.__name__:fp
+    }
+    
+    parser['active'] = {}
+    with open(file, 'w') as cf:
+        parser.write(cf)
 
 class InvalidConfigError(Exception):
     """Raised when a config value does not exist in the configuration."""
@@ -80,39 +98,14 @@ class PackageConfigParser(ConfigParser):
     def restore(self):
         self.config_file.unlink(True)
         init_config_settings(self.config_file)
-    
-def init_config_settings(file: Path):
-    file.parent.mkdir(parents=True, exist_ok=True)
-    
-    parser = ConfigParser()
-    parser.optionxform = str
-    parser['env'] = { EXTENSION : '.y' }
-    
-    fp = Path(__file__).resolve()
-    parser['available'] = {
-        WhenTransformer.__name__:fp,
-        PrintScreenTransformer.__name__:fp,
-        SemiColonTransformer.__name__:fp
-    }
-    
-    parser['active'] = {}
-    with open(file, 'w') as cf:
-        parser.write(cf)
         
 class Transform:
-    
-    TRANSFORM_REGISTRY = {}
-    
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        cls.TRANSFORM_REGISTRY[cls.__name__] = cls
         
     def apply_grammar(self, grammar : GrammarWrapper):
         pass
     
     def apply_ast(self, root : ast.AST):
         pass
-    
     
     def get_sort(self):
         return 0
@@ -153,8 +146,8 @@ class Transform:
 class WhenTransformer(Transform):
     
     def __init__(self):
-        self.iftowhen = RenameLeaf(StringLeaf, "'if'", "'when'")
-        self.eliftoelwhen = RenameLeaf(StringLeaf, "'elif'", "'elwhen'")
+        self.iftowhen = RenameStringLeaf("'if'", "'when'")
+        self.eliftoelwhen = RenameStringLeaf("'elif'", "'elwhen'")
         
     def apply_grammar(self, grammar):
         self.iftowhen.apply(grammar)
@@ -177,3 +170,14 @@ class PrintScreenTransformer(Transform):
         
     def apply_ast(self, root):
         self.name_t.visit(root)
+        
+class BracesTransformer(Transform):
+    def __init__(self):
+        self.braces_t = ReplaceRuleBody("block", """block[list] (memo):
+    | '{' a=statements '}' { a }
+    | '{' simple_stmts '}'
+    | invalid_block)""")
+        
+    def apply_grammar(self, grammar):
+        self.braces_t.apply(grammar)
+        print(grammar)

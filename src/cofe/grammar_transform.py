@@ -146,6 +146,28 @@ class RenameLeaf(GrammarTransform):
     def apply(self, wrapper: GrammarWrapper) -> None:
         wrapper.set_type_name(self.leaf_type, self.old, self.new)
  
+@dataclass
+class RenameStringLeaf(GrammarTransform):
+    """Rename every occurrence of a StringLeaf value
+    """
+ 
+    old: str
+    new: str
+ 
+    def apply(self, wrapper: GrammarWrapper) -> None:
+        wrapper.set_type_name(StringLeaf, self.old, self.new)
+        
+@dataclass
+class RenameNameLeaf(GrammarTransform):
+    """Rename every occurrence of a NameLeaf value
+    """
+ 
+    old: str
+    new: str
+ 
+    def apply(self, wrapper: GrammarWrapper) -> None:
+        wrapper.set_type_name(NameLeaf, self.old, self.new)
+ 
  
 @dataclass
 class RenameRule(GrammarTransform):

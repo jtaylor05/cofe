@@ -31,18 +31,23 @@ class PythonLauncher:
             
             if module_name in _modules:
                 class_var = getattr(_modules[module_name], cls)
-                if issubclass(class_var, Transform):
+                if matches_transform(class_var):
                     self.transformers.append(class_var())
                 continue
             
             module = import_module_from_file(module_name, p)
             
+            print("New module: ", module)
+            
             _modules[module_name] = module
             class_var = getattr(module, cls)
-            if issubclass(class_var, Transform):
+            if matches_transform(class_var):
+                print(class_var, " is subclass of Transform.")
                 self.transformers.append(class_var())
         
         self.transformers.sort(key=lambda t: t.get_sort())
+        
+        print([t.__class__.__name__ for t in self.transformers])
         
         if not Path(file).exists():
             raise FileExistsError(f"File {file} given to PythonLauncher does not exist.")
@@ -91,3 +96,9 @@ def import_module_from_file(module_name: str, file_path: PathLike):
     spec.loader.exec_module(module)
     
     return module
+
+def matches_transform(cls: type):
+    properties_transform = { attr for attr in dir(Transform) }
+    properties_cls = { attr for attr in dir(cls) }
+    
+    return properties_transform.issubset(properties_cls)

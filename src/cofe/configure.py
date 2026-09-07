@@ -3,7 +3,9 @@ from pathlib import Path
 
 import ast
 
-from .grammar_transform import GrammarWrapper
+from .grammar_transform import GrammarWrapper, RenameLeaf, ReplaceRuleBody
+from .ast_transform import StrictCallTransformer
+from pegen.grammar import StringLeaf
 
 MODULE_DIR = ".cenv"
 
@@ -83,8 +85,16 @@ def init_config_settings(file: Path):
     file.parent.mkdir(parents=True, exist_ok=True)
     
     parser = ConfigParser()
+    parser.optionxform = str
     parser['env'] = { EXTENSION : '.y' }
-    parser['available'] = {}
+    
+    fp = Path(__file__).resolve()
+    parser['available'] = {
+        WhenTransformer.__name__:fp,
+        PrintScreenTransformer.__name__:fp,
+        SemiColonTransformer.__name__:fp
+    }
+    
     parser['active'] = {}
     with open(file, 'w') as cf:
         parser.write(cf)
@@ -139,3 +149,31 @@ class Transform:
     
     def __hash__(self):
         return object.__hash__(self)
+    
+class WhenTransformer(Transform):
+    
+    def __init__(self):
+        self.iftowhen = RenameLeaf(StringLeaf, "'if'", "'when'")
+        self.eliftoelwhen = RenameLeaf(StringLeaf, "'elif'", "'elwhen'")
+        
+    def apply_grammar(self, grammar):
+        self.iftowhen.apply(grammar)
+        self.eliftoelwhen.apply(grammar)
+        
+class SemiColonTransformer(Transform):
+    
+    def __init__(self):
+        self.replace = ReplaceRuleBody("simple_stmts", """simple_stmts[list]:
+    | a=simple_stmt ';' NEWLINE { [a] } # Not needed, there for speedup
+    | a=';'.simple_stmt+ ';' NEWLINE { a }""")
+        
+    def apply_grammar(self, grammar):
+        self.replace.apply(grammar)
+        
+class PrintScreenTransformer(Transform):
+    
+    def __init__(self):
+        self.name_t = StrictCallTransformer("print_screen", "print")
+        
+    def apply_ast(self, root):
+        self.name_t.visit(root)

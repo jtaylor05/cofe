@@ -69,7 +69,7 @@ def exec_command(file_path: str, remainder: list[str], debug=False):
     install_import_hook()
     
     launcher = PythonLauncher(file_path)
-    launcher.launch(debug)
+    launcher.launch(debug) 
 
 if __name__ == "__main__":
     parser = ap.ArgumentParser(
@@ -91,6 +91,9 @@ if __name__ == "__main__":
     exec_parser = subparsers.add_parser("exec", help="acts as an entry point into module code.")
     exec_parser.add_argument("file_path", type=str)
     exec_parser.add_argument("--debug-cofe", action="store_true", help="A hook to include all of the stack in the traceback.")
+    
+    # freeze_parser = subparsers.add_parser("freeze", help="Freezes current state into an executable. Executable can only execute code.")
+    # freeze_parser.add_argument("-o", "--output", type=str, default="cofe", help="File name of saved executable.")
     
     args, remainder = parser.parse_known_args()
     

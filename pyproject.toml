@@ -10,5 +10,8 @@ description = "CounterFactual Environment compatible with Python."
 dependencies = [
     "pegen==0.3.0"]
 
+[project.scripts]
+cofe = "cofe.__main__:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]

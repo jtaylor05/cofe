@@ -4,13 +4,17 @@ from pathlib import Path
 import ast
 
 from cofe.grammar_transform import GrammarWrapper, RenameStringLeaf, ReplaceRuleBody
-from cofe.ast_transform import StrictCallTransformer
+from cofe.ast_transform import (
+    StrictCallTransformer,
+    AggregateImportTransformer
+)
 
 MODULE_DIR = ".cenv"
 
 CONFIG_FILENAME = "config.ini"
 
 EXTENSION = "extension"
+TEST_MODE = "test"
 
 type Pathlike = str | Path
 
@@ -19,7 +23,8 @@ def init_config_settings(file: Path):
     
     parser = ConfigParser()
     parser.optionxform = str
-    parser['env'] = { EXTENSION : '.y' }
+    parser['env'] = { EXTENSION : '.y', 
+                      TEST_MODE : False}
     
     fp = Path(__file__).resolve()
     parser['available'] = {
@@ -38,11 +43,11 @@ class InvalidConfigError(Exception):
     pass
 
 class PackageConfigParser(ConfigParser):
-    def __init__(self, directory: str = MODULE_DIR, config_file: str = CONFIG_FILENAME):
+    def __init__(self, config_file: str = Path(MODULE_DIR, CONFIG_FILENAME)):
         super().__init__()
         self.optionxform = str
         
-        self.config_file = Path(directory, config_file).resolve()
+        self.config_file = Path(config_file).resolve()
         if not self.config_file.exists():
             init_config_settings(self.config_file)
         
@@ -58,8 +63,14 @@ class PackageConfigParser(ConfigParser):
     @property
     def extension(self):
         if EXTENSION not in self['env']:
-            raise InvalidConfigError(f"No value 'extension' can be found in {CONFIG_FILENAME}.")
+            raise InvalidConfigError(f"No value '{EXTENSION}' can be found in {CONFIG_FILENAME}.")
         return self['env'][EXTENSION]
+    
+    @property
+    def test_mode(self):
+        if TEST_MODE not in self['env']:
+            raise InvalidConfigError(f"No value '{TEST_MODE}' can be found in {CONFIG_FILENAME}.")
+        return self['env'].getboolean(TEST_MODE)
     
     def set_default(self, key: str, val: str):
         if key in self['env']:
@@ -91,8 +102,9 @@ class PackageConfigParser(ConfigParser):
     def get_active(self) -> dict[str, str]:
         return dict(self['active'])
     
-    def write(self):
-        with open(self.config_file, 'w') as cf:
+    def write(self, dest=None):
+        fp = self.config_file if dest is None else dest
+        with open(fp, 'w') as cf:
             super().write(cf)
     
     def restore(self):
@@ -163,14 +175,6 @@ class SemiColonTransformer(Transform):
     def apply_grammar(self, grammar):
         self.replace.apply(grammar)
         
-class PrintScreenTransformer(Transform):
-    
-    def __init__(self):
-        self.name_t = StrictCallTransformer("print_screen", "print")
-        
-    def apply_ast(self, root):
-        self.name_t.visit(root)
-        
 class DoEndTransformer(Transform):
     def __init__(self):
         self.braces_t = ReplaceRuleBody("block", """block[list] (memo):
@@ -180,3 +184,19 @@ class DoEndTransformer(Transform):
         
     def apply_grammar(self, grammar):
         self.braces_t.apply(grammar)
+
+class SystemTransformer(Transform):
+    
+    def __init__(self):
+        self.sys_t = AggregateImportTransformer("system", "sys")
+        
+    def apply_ast(self, root):
+        self.sys_t.visit(root)
+
+class PrintScreenTransformer(Transform):
+    
+    def __init__(self):
+        self.name_t = StrictCallTransformer("print_screen", "print")
+        
+    def apply_ast(self, root):
+        self.name_t.visit(root)

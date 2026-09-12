@@ -4,7 +4,7 @@ import random
 
 import argparse as ap
 
-from . import PythonLauncher, PackageConfigParser, install_import_hook
+from . import PythonLauncher, PackageConfigParser, install_import_hook, TEST_MODE
 
 def add_changes(raw_changes: list[str]):
     print("changes:", raw_changes)
@@ -60,21 +60,30 @@ def randomize_active(n: int):
         config.add_active(s)
         
     config.write()
-    
 
-def exec_command(file_path: str, remainder: list[str], debug=False):
+def tag_config(file_path: str):
+    config = PackageConfigParser()
+    
+    config.write(file_path)
+    
+def set_tag(file_path: str):
+    config = PackageConfigParser(file_path)
+    
+    config.write()
+
+def exec_command(file_path: str, remainder: list[str], debug=False, config_file=None):
     sys.argv = [file_path] + remainder
     print(sys.argv)
     
     install_import_hook()
     
-    launcher = PythonLauncher(file_path)
+    launcher = PythonLauncher(file_path, config_file) if config_file else PythonLauncher()
     launcher.launch(debug) 
 
-if __name__ == "__main__":
+def normal_mode():
     parser = ap.ArgumentParser(
-        prog="ython",
-        description="A counterfactual python interpreter; completely compatible with standard python.",
+        prog="cofe",
+        description="A COunterFactual Environment python interpreter; completely compatible with standard python.",
         epilog="This project is under development. There may still be bugs."
     )
     subparsers = parser.add_subparsers(dest="command", required=True, help="Which submodule to use.")
@@ -87,10 +96,14 @@ if __name__ == "__main__":
     config_parser.add_argument("-v", "--remove-available", nargs='*', type=str, help="Remove transformer class from available.")
     config_parser.add_argument("-l", "--remove-active", nargs='*', type=str, help="Remove transformer class from active.")
     config_parser.add_argument("-R", "--random", type=int, default=-1, help="Randomize active transformers.")
+    config_parser.add_argument("-T", "--tag", type=str, help="Saves a copy of the current configuration to a new file at this location.")
+    config_parser.add_argument("-s", "--set", type=str, help="Replaces current config with the given config. Does not save the old one.")
     
     exec_parser = subparsers.add_parser("exec", help="acts as an entry point into module code.")
     exec_parser.add_argument("file_path", type=str)
-    exec_parser.add_argument("--debug-cofe", action="store_true", help="A hook to include all of the stack in the traceback.")
+    exec_parser.add_argument("--cofe-debug", action="store_true", help="A hook to include all of the stack in the traceback.")
+    #If given, uses this file as config instead of standard.
+    exec_parser.add_argument("--cofe-tag", type=str, help="If given, uses this file as config instead of standard.")
     
     # freeze_parser = subparsers.add_parser("freeze", help="Freezes current state into an executable. Executable can only execute code.")
     # freeze_parser.add_argument("-o", "--output", type=str, default="cofe", help="File name of saved executable.")
@@ -113,8 +126,42 @@ if __name__ == "__main__":
                 remove_active(args.remove_active)
             if args.random >= 0:
                 randomize_active(args.random)
+            if args.tag:
+                tag_config(args.tag)
+            if args.set:
+                set_tag(args.set)
             
         case "exec":
-            exec_command(args.file_path, remainder, args.debug_cofe)
+            exec_command(args.file_path, remainder, args.cofe_debug, args.cofe_tag)
+
+def test_mode():
+    parser = ap.ArgumentParser(
+        prog="cofe",
+        description="A COunterFactual Environment python interpreter; completely compatible with standard python.",
+        epilog="This project is under development. There may still be bugs."
+    )
+    parser.add_argument("file_path", type=str)
+
+    parser.add_argument("--end-test", action="store_true", help=ap.SUPPRESS)
+
+    args, remainder = parser.parse_known_args()
+    
+    exec_command(args.file_path, remainder, False)
+    
+    if args.end_test:
+        conf = PackageConfigParser()
+        conf.set_default(TEST_MODE, False)
+        conf.write()
+    
+
+def main():
+    conf = PackageConfigParser()
+    if conf.test_mode:
+        test_mode()
+    else:
+        normal_mode()
+
+if __name__ == "__main__":
+    main()
             
             

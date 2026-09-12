@@ -11,7 +11,8 @@ from .ast_transform import (
 
 from .configure import (
     PackageConfigParser, 
-    init_config_settings
+    init_config_settings,
+    TEST_MODE
 )
 
 from .grammar_transform import (

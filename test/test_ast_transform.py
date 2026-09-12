@@ -1,6 +1,6 @@
 import ast
 import pytest
-from ython import (
+from cofe import (
     StrictCallTransformer,
     StrictFuncDefTransformer,
     StrictImportTransformer,

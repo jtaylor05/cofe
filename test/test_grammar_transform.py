@@ -2,7 +2,7 @@ import pytest
 from pegen.grammar import NameLeaf, StringLeaf
 from pegen.grammar_parser import GeneratedParser as GrammarParser
 from pegen.utils import parse_string
-from ython import (
+from cofe import (
     GrammarWrapper,
     InjectAlt,
     RenameLeaf,

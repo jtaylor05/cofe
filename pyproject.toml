@@ -4,14 +4,29 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cofe"
-requires-python="~=3.13"
 version = "0.1.0"
+authors = [
+    { name = "Jackson Taylor", email}
+]
 description = "CounterFactual Environment compatible with Python."
+readme="README.md"
+requires-python="~=3.13"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
 dependencies = [
-    "pegen==0.3.0"]
+    "pegen==0.3.0"
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
 
 [project.scripts]
 cofe = "cofe.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/jtaylor05/cofe"
+Repository = "https://github.com/jtaylor05/cofe"
 
 [tool.setuptools.packages.find]
 where = ["src"]

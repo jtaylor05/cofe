@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "cofe"
 version = "0.1.0"
 authors = [
-    { name = "Jackson Taylor", email}
+    { name = "Jackson Taylor", email = "jttaylor01@wm.edu" }
 ]
 description = "CounterFactual Environment compatible with Python."
 readme="README.md"

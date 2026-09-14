@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0", "setuptools_scm[toml]>=7.1", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "cofe"
-version = "0.1.0"
+dynamic = ["version"]
 authors = [
     { name = "Jackson Taylor", email = "jttaylor01@wm.edu" }
 ]
@@ -30,3 +30,5 @@ Repository = "https://github.com/jtaylor05/cofe"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools_scm]

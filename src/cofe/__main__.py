@@ -77,7 +77,7 @@ def exec_command(file_path: str, remainder: list[str], debug=False, config_file=
     
     install_import_hook()
     
-    launcher = PythonLauncher(file_path, config_file) if config_file else PythonLauncher()
+    launcher = PythonLauncher(file_path, config_file) if config_file else PythonLauncher(file_path)
     launcher.launch(debug) 
 
 def normal_mode():

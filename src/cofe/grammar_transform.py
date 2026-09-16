@@ -25,14 +25,17 @@ class _LeafCollector(GrammarVisitor):
     """Walks a Rule and records every NameLeaf/StringLeaf occurrence."""
  
     def __init__(self) -> None:
-        self.visited: Set[Any] = set()
+        self.visited: Set[int] = set()
+        self.keepalive: list[Any] = []
         self.table: NameTable = {}
         self.count = 0
- 
+
     def check_visited(self, node: Any) -> bool:
-        if node in self.visited:
+        key = id(node)
+        if key in self.visited:
             return True
-        self.visited.add(node)
+        self.visited.add(key)
+        self.keepalive.append(node)
         return False
  
     def _gather(self, node: Leaf) -> None:
@@ -46,8 +49,9 @@ class _LeafCollector(GrammarVisitor):
         self._gather(node)
  
     def visit_Gather(self, node: Gather) -> None:
-        self.visit(node.separator)
-        self.visit(node.node)
+        for child in (node.separator, node.node):
+            if not self.check_visited(child):
+                self.visit(child)
     
     def generic_visit(self, node, *args, **kwargs):
         """Called if no explicit visitor function exists for a node."""

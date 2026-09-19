@@ -28,6 +28,9 @@ cofe = "cofe.__main__:main"
 Homepage = "https://github.com/jtaylor05/cofe"
 Repository = "https://github.com/jtaylor05/cofe"
 
+[project.optional-dependencies]
+dev = ["pytest", "flake8"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

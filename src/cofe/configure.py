@@ -3,8 +3,8 @@ from pathlib import Path
 
 import ast
 
-from cofe.grammar_transform import GrammarWrapper, RenameStringLeaf, ReplaceRuleBody
-from cofe.ast_transform import (
+from .grammar_transform import GrammarWrapper, RenameStringLeaf, ReplaceRuleBody
+from .ast_transform import (
     StrictCallTransformer,
     AggregateImportTransformer
 )
@@ -26,13 +26,7 @@ def init_config_settings(file: Path):
     parser['env'] = { EXTENSION : '.y', 
                       TEST_MODE : False}
     
-    fp = Path(__file__).resolve()
-    parser['available'] = {
-        WhenTransformer.__name__:fp,
-        PrintScreenTransformer.__name__:fp,
-        SemiColonTransformer.__name__:fp,
-        DoEndTransformer.__name__:fp
-    }
+    parser['available'] = {}
     
     parser['active'] = {}
     with open(file, 'w') as cf:
@@ -111,6 +105,13 @@ class PackageConfigParser(ConfigParser):
         self.config_file.unlink(True)
         init_config_settings(self.config_file)
         
+        
+def matches_transform(cls: type):
+    properties_transform = { attr for attr in dir(Transform) }
+    properties_cls = { attr for attr in dir(cls) }
+    
+    return properties_transform.issubset(properties_cls)
+
 class Transform:
         
     def apply_grammar(self, grammar : GrammarWrapper):
@@ -154,49 +155,4 @@ class Transform:
     
     def __hash__(self):
         return object.__hash__(self)
-    
-class WhenTransformer(Transform):
-    
-    def __init__(self):
-        self.iftowhen = RenameStringLeaf("'if'", "'when'")
-        self.eliftoelwhen = RenameStringLeaf("'elif'", "'elwhen'")
-        
-    def apply_grammar(self, grammar):
-        self.iftowhen.apply(grammar)
-        self.eliftoelwhen.apply(grammar)
-        
-class SemiColonTransformer(Transform):
-    
-    def __init__(self):
-        self.replace = ReplaceRuleBody("simple_stmts", """simple_stmts[list]:
-    | a=simple_stmt ';' NEWLINE { [a] } # Not needed, there for speedup
-    | a=';'.simple_stmt+ ';' NEWLINE { a }""")
-        
-    def apply_grammar(self, grammar):
-        self.replace.apply(grammar)
-        
-class DoEndTransformer(Transform):
-    def __init__(self):
-        self.braces_t = ReplaceRuleBody("block", """block[list] (memo):
-    | NEWLINE* 'do' NEWLINE* [INDENT] a=statements [DEDENT] 'end' NEWLINE* { a }
-    | simple_stmts
-    | invalid_block""")
-        
-    def apply_grammar(self, grammar):
-        self.braces_t.apply(grammar)
-
-class SystemTransformer(Transform):
-    
-    def __init__(self):
-        self.sys_t = AggregateImportTransformer("system", "sys")
-        
-    def apply_ast(self, root):
-        self.sys_t.visit(root)
-
-class PrintScreenTransformer(Transform):
-    
-    def __init__(self):
-        self.name_t = StrictCallTransformer("print_screen", "print")
-        
-    def apply_ast(self, root):
-        self.name_t.visit(root)
+   

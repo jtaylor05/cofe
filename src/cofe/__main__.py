@@ -4,7 +4,10 @@ import random
 
 import argparse as ap
 
+from pathlib import Path
+
 from . import PythonLauncher, PackageConfigParser, install_import_hook, TEST_MODE
+from .utils import get_transformers, gather_transformers
 
 def add_changes(raw_changes: list[str]):
     print("changes:", raw_changes)
@@ -15,7 +18,27 @@ def add_changes(raw_changes: list[str]):
         config.set_default(k, v)
     
     config.write()
+
+def add_files(targets: list[Path]):
+    config = PackageConfigParser()
     
+    targets = [(cls, fp) for target in targets for cls, fp in get_transformers(target)]
+    
+    for cls, fp in targets:
+        config.add_transformer(cls.__name__, fp)
+        
+    config.write()
+    
+def find_files(roots: Path):
+    config = PackageConfigParser()
+    
+    targets = [(cls, fp) for root in roots for cls, fp in gather_transformers(root)]
+    
+    for cls, fp in targets:
+            config.add_transformer(cls.__name__, fp)
+            
+    config.write()
+
 def add_transformers(raw_transformers: list[str]):
     print("transformers: ", raw_transformers)
     transformers = {d[0]:d[1] for d in [t.split('=') for t in raw_transformers]}
@@ -90,6 +113,8 @@ def normal_mode():
     
     config_parser = subparsers.add_parser("config", help="configure interpreter settings and modules.")
     config_parser.add_argument("-c", "--change", nargs='*', type=str, help="Changes made to current configuration (key=value).")
+    config_parser.add_argument("--add", dest="targets", nargs='*', type=Path, help="Add all valid transformers in a file as available.")
+    config_parser.add_argument("-f", "--find", dest="roots", nargs='*', type=Path, help="Recursively find all transformers starting from directory root and add them as available.")
     config_parser.add_argument("-r", "--restore", action='store_true', help="Restores defaults on the current configuration.")
     config_parser.add_argument("-t", "--transformer", nargs='*', type=str, help="Add new transformer class, as well as file (cls=file).")
     config_parser.add_argument("-a", "--active", nargs='*', type=str, help="Add new active transformer class.")
@@ -116,6 +141,10 @@ def normal_mode():
                 PackageConfigParser().restore()
             if args.change:
                 add_changes(args.change)
+            if args.targets:
+                add_files(args.targets)
+            if args.roots:
+                find_files(args.roots)
             if args.transformer:
                 add_transformers(args.transformer)
             if args.active:

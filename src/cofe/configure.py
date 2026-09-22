@@ -18,19 +18,15 @@ TEST_MODE = "test"
 
 type Pathlike = str | Path
 
-def init_config_settings(file: Path):
-    file.parent.mkdir(parents=True, exist_ok=True)
-    
-    parser = ConfigParser()
+def init_config_settings(parser: ConfigParser):
     parser.optionxform = str
     parser['env'] = { EXTENSION : '.y', 
-                      TEST_MODE : False}
-    
+                          TEST_MODE : False}
+        
     parser['available'] = {}
     
     parser['active'] = {}
-    with open(file, 'w') as cf:
-        parser.write(cf)
+
 
 class InvalidConfigError(Exception):
     """Raised when a config value does not exist in the configuration."""
@@ -43,7 +39,8 @@ class PackageConfigParser(ConfigParser):
         
         self.config_file = Path(config_file).resolve()
         if not self.config_file.exists():
-            init_config_settings(self.config_file)
+            init_config_settings(self)
+            self.write()
         
         self.read(self.config_file)
         
@@ -102,8 +99,7 @@ class PackageConfigParser(ConfigParser):
             super().write(cf)
     
     def restore(self):
-        self.config_file.unlink(True)
-        init_config_settings(self.config_file)
+        init_config_settings(self)
         
         
 def matches_transform(cls: type):

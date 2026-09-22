@@ -81,9 +81,13 @@ def add_changes(raw_changes: list[str]):
         config.set_default(k, v)
     
     config.write()
+    
+def deactivate(parser: PackageConfigParser=None):
+    config = PackageConfigParser() if parser is None else parser
+    config.clear_active()
 
-def randomize_active(n: int):
-    config = PackageConfigParser()
+def randomize_active(n: int, parser: PackageConfigParser=None):
+    config = PackageConfigParser() if parser is None else parser
     
     config.clear_active()
     
@@ -93,18 +97,14 @@ def randomize_active(n: int):
     
     for s in selection:
         config.add_active(s)
-        
-    config.write()
 
-def tag_config(file_path: str):
-    config = PackageConfigParser()
+def tag_config(file_path: str, parser: PackageConfigParser=None):
+    config = PackageConfigParser() if parser is None else parser
     
     config.write(file_path)
     
-def set_tag(file_path: str):
-    config = PackageConfigParser(file_path)
-    
-    config.write()
+def set_tag(file_path: str, parser: PackageConfigParser):
+    parser.load(file_path)
 
 def exec_command(file_path: str, remainder: list[str], debug=False, config_file=None):
     sys.argv = [file_path] + remainder
@@ -134,10 +134,11 @@ def normal_mode():
     
     config_parser.add_argument("-c", "--change", nargs='*', type=str, help="Changes made to current configuration (key=value).")
     config_parser.add_argument("-R", "--restore", action='store_true', help="Restores defaults on the current configuration.")
+    config_parser.add_argument("-d", "--deactivate", action='store_true', help="Removes all active transformers.")
     config_parser.add_argument("--random", type=int, default=-1, help="Randomize n active transformers.")
     
     tag_grp = config_parser.add_argument_group("Tag Operations")
-    tag_grp.add_argument("-T", "--tag", type=str, help="Saves a copy of the current configuration to a new file at this location.")
+    tag_grp.add_argument("-t", "--tag", type=str, help="Saves a copy of the current configuration to a new file at this location.")
     tag_grp.add_argument("-s", "--set", type=Path, help="Replaces current config with the given config. Does not save the old one.")
     
     
@@ -174,20 +175,23 @@ def normal_mode():
             ## list op
             if args.list:
                 list_transformers(state, config)
-                
-            # Tag Operations
-            if args.tag:
-                tag_config(args.tag)
-            if args.set:
-                set_tag(args.set)
             
             # Other Operations
             ## config mod op
             if args.change:
                 add_changes(args.change)
+            ## deactivate op
+            if args.deactivate:
+                deactivate(config)
             ## randomize op
             if args.random >= 0:
-                randomize_active(args.random)
+                randomize_active(args.random, config)
+                
+            # Tag Operations
+            if args.tag:
+                tag_config(args.tag, config)
+            if args.set:
+                set_tag(args.set, config)
             
             config.write()
             

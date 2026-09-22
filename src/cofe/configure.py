@@ -1,7 +1,7 @@
 from configparser import ConfigParser
 from pathlib import Path
 
-import ast
+import ast, warnings
 
 from .grammar_transform import GrammarWrapper, RenameStringLeaf, ReplaceRuleBody
 from .ast_transform import (
@@ -46,6 +46,10 @@ class PackageConfigParser(ConfigParser):
         
         if not self.has_section("env"):
             self.add_section("env")
+            if not self.has_option("env", EXTENSION):
+                self.set("env", EXTENSION, '.y')
+            if not self.has_option("env", TEST_MODE):
+                self.set("env", TEST_MODE, False)
         if not self.has_section("available"):
             self.add_section("available")
         if not self.has_section("active"):
@@ -60,7 +64,8 @@ class PackageConfigParser(ConfigParser):
     @property
     def test_mode(self):
         if TEST_MODE not in self['env']:
-            raise InvalidConfigError(f"No value '{TEST_MODE}' can be found in {CONFIG_FILENAME}.")
+            warnings.warn(f"No value {TEST_MODE} can be found in {self.config_file}.")
+            return False
         return self['env'].getboolean(TEST_MODE)
     
     def set_default(self, key: str, val: str):
@@ -92,6 +97,11 @@ class PackageConfigParser(ConfigParser):
 
     def get_active(self) -> dict[str, str]:
         return dict(self['active'])
+    
+    def load(self, file=None):
+        fp = self.config_file if file is None else file
+        self.clear()
+        self.read(fp)
     
     def write(self, dest=None):
         fp = self.config_file if dest is None else dest

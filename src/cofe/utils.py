@@ -53,7 +53,7 @@ def import_module_from_file(module_name: str, file_path: PathLike):
     return module
 
 def get_transformers(fp: PathLike, extension: str=".py") -> TransformMatches:
-    fp = Path(fp)
+    fp = Path(fp).resolve()
     if not fp.is_file():
         raise ValueError(f"Input file {fp} is not a file.")
     if not fp.suffix == extension:

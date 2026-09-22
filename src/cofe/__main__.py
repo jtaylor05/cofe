@@ -4,10 +4,73 @@ import random
 
 import argparse as ap
 
+from typing import Literal
 from pathlib import Path
 
 from . import PythonLauncher, PackageConfigParser, install_import_hook, TEST_MODE
 from .utils import get_transformers, gather_transformers
+
+type PathsOrNames = Path | str
+type ConfigState = Literal['active', 'available']
+
+def _get_transformer_names(targets: list[PathsOrNames]) -> list[str]:
+    paths = []
+    cls_names = []
+    for t in targets: 
+        path = Path(t)
+        if path.exists():
+            paths.append(path)
+        else:
+            cls_names.append(t)
+    
+    return cls_names + [cls.__name__ for p in paths for cls, _ in get_transformers(p)]
+
+#=========================================== MAIN OPERATIONS =================================================#
+
+def add_transformers(state: ConfigState, targets: list[PathsOrNames], parser: PackageConfigParser = None):
+    config = PackageConfigParser() if parser is None else parser
+    
+    if state == 'available':
+        for cls, fp in [(cls, fp) for target in targets for cls, fp in get_transformers(target)]:
+            config.add_transformer(cls.__name__, fp)
+    else:
+        for name in _get_transformer_names(targets):
+            config.add_active(name)
+    
+def remove_transformers(state: ConfigState, targets: list[PathsOrNames], parser: PackageConfigParser = None):
+    config = PackageConfigParser() if parser is None else parser
+        
+    if state == 'available':
+        for name in _get_transformer_names(targets):
+            config.remove_transformer(name)
+    else:
+        for name in _get_transformer_names(targets):
+            config.remove_active(name)
+            
+def find_transformers(state: ConfigState, roots: list[Path], parser: PackageConfigParser = None):
+    config = PackageConfigParser() if parser is None else parser
+    
+    targets = [(cls, fp) for root in roots for cls, fp in gather_transformers(root)]
+    if state == 'available':
+        for cls, fp in targets:
+            config.add_transformer(cls.__name__, fp)
+    else:
+        for name in _get_transformer_names(targets):
+            config.add_active(name)
+            
+def list_transformers(state: ConfigState, parser: PackageConfigParser = None):
+    config = PackageConfigParser() if parser is None else parser
+    
+    if state == 'available':
+        print("Available Transformers:")
+        for name, file in config.get_available().items():
+            print(f"{name:>30.30} : {file:.100}")
+    else:
+        print("Active Transformers:")
+        for name, file in config.get_active().items():
+            print(f"{name:>30.30} : {file:.100}")
+
+#=============================================================================================================#
 
 def add_changes(raw_changes: list[str]):
     print("changes:", raw_changes)
@@ -17,57 +80,6 @@ def add_changes(raw_changes: list[str]):
     for k,v in changes.items():
         config.set_default(k, v)
     
-    config.write()
-
-def add_files(targets: list[Path]):
-    config = PackageConfigParser()
-    
-    targets = [(cls, fp) for target in targets for cls, fp in get_transformers(target)]
-    
-    for cls, fp in targets:
-        config.add_transformer(cls.__name__, fp)
-        
-    config.write()
-    
-def find_files(roots: Path):
-    config = PackageConfigParser()
-    
-    targets = [(cls, fp) for root in roots for cls, fp in gather_transformers(root)]
-    
-    for cls, fp in targets:
-            config.add_transformer(cls.__name__, fp)
-            
-    config.write()
-
-def add_transformers(raw_transformers: list[str]):
-    print("transformers: ", raw_transformers)
-    transformers = {d[0]:d[1] for d in [t.split('=') for t in raw_transformers]}
-    
-    config = PackageConfigParser()
-    for k, v in transformers.items():
-        config.add_transformer(k, v)
-        
-    config.write()
-    
-def add_active(new_active: list[str]):
-    print("New active: ", new_active)
-    
-    config = PackageConfigParser()
-    for a in new_active:
-        config.add_active(a)
-    
-    config.write()
-    
-def remove_transformers(old_transformers: list[str]):
-    config = PackageConfigParser()
-    for t in old_transformers:
-        config.remove_transformer(t)
-    config.write()
-    
-def remove_active(old_active: list[str]):
-    config = PackageConfigParser()
-    for a in old_active:
-        config.remove_active(a)
     config.write()
 
 def randomize_active(n: int):
@@ -112,17 +124,22 @@ def normal_mode():
     subparsers = parser.add_subparsers(dest="command", required=True, help="Which submodule to use.")
     
     config_parser = subparsers.add_parser("config", help="configure interpreter settings and modules.")
+    
+    main_grp = config_parser.add_argument_group("Main Operations")
+    main_grp.add_argument("-v", "--active", action='store_true', help="Performs all main operations on the active list, rather than the available.")
+    main_grp.add_argument("-a", "--add", dest="targets", nargs='*', type=str, help="Add all valid transformers in a file.")
+    main_grp.add_argument("-r", "--remove", dest="remove_targets", nargs='*', type=str, help="Attempts to remove either transformer with same class name as input, or all transformers from input file.")
+    main_grp.add_argument("-f", "--find", dest="roots", nargs='*', type=Path, help="Recursively find all transformers starting from directory root and add them.")
+    main_grp.add_argument("-l", "--list", action='store_true', help="Lists out transformers.")
+    
     config_parser.add_argument("-c", "--change", nargs='*', type=str, help="Changes made to current configuration (key=value).")
-    config_parser.add_argument("--add", dest="targets", nargs='*', type=Path, help="Add all valid transformers in a file as available.")
-    config_parser.add_argument("-f", "--find", dest="roots", nargs='*', type=Path, help="Recursively find all transformers starting from directory root and add them as available.")
-    config_parser.add_argument("-r", "--restore", action='store_true', help="Restores defaults on the current configuration.")
-    config_parser.add_argument("-t", "--transformer", nargs='*', type=str, help="Add new transformer class, as well as file (cls=file).")
-    config_parser.add_argument("-a", "--active", nargs='*', type=str, help="Add new active transformer class.")
-    config_parser.add_argument("-v", "--remove-available", nargs='*', type=str, help="Remove transformer class from available.")
-    config_parser.add_argument("-l", "--remove-active", nargs='*', type=str, help="Remove transformer class from active.")
-    config_parser.add_argument("-R", "--random", type=int, default=-1, help="Randomize active transformers.")
-    config_parser.add_argument("-T", "--tag", type=str, help="Saves a copy of the current configuration to a new file at this location.")
-    config_parser.add_argument("-s", "--set", type=str, help="Replaces current config with the given config. Does not save the old one.")
+    config_parser.add_argument("-R", "--restore", action='store_true', help="Restores defaults on the current configuration.")
+    config_parser.add_argument("--random", type=int, default=-1, help="Randomize n active transformers.")
+    
+    tag_grp = config_parser.add_argument_group("Tag Operations")
+    tag_grp.add_argument("-T", "--tag", type=str, help="Saves a copy of the current configuration to a new file at this location.")
+    tag_grp.add_argument("-s", "--set", type=Path, help="Replaces current config with the given config. Does not save the old one.")
+    
     
     exec_parser = subparsers.add_parser("exec", help="acts as an entry point into module code.")
     exec_parser.add_argument("file_path", type=str)
@@ -137,28 +154,42 @@ def normal_mode():
     
     match args.command:
         case "config":
+            state = 'active' if args.active else 'available'
+            config = PackageConfigParser()
+            
+            # Restore to defaults first if desired.
             if args.restore:
-                PackageConfigParser().restore()
-            if args.change:
-                add_changes(args.change)
+                config.restore()
+            
+            # Main Operations
+            ## add op
             if args.targets:
-                add_files(args.targets)
+                add_transformers(state, args.targets, config)
+            ## remove op
+            if args.remove_targets:
+                remove_transformers(state, args.remove_targets, config)
+            ## find op
             if args.roots:
-                find_files(args.roots)
-            if args.transformer:
-                add_transformers(args.transformer)
-            if args.active:
-                add_active(args.active)
-            if args.remove_available:
-                remove_transformers(args.remove_available)
-            if args.remove_active:
-                remove_active(args.remove_active)
-            if args.random >= 0:
-                randomize_active(args.random)
+                find_transformers(state, args.roots, config)
+            ## list op
+            if args.list:
+                list_transformers(state, config)
+                
+            # Tag Operations
             if args.tag:
                 tag_config(args.tag)
             if args.set:
                 set_tag(args.set)
+            
+            # Other Operations
+            ## config mod op
+            if args.change:
+                add_changes(args.change)
+            ## randomize op
+            if args.random >= 0:
+                randomize_active(args.random)
+            
+            config.write()
             
         case "exec":
             exec_command(args.file_path, remainder, args.cofe_debug, args.cofe_tag)

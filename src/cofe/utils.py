@@ -40,6 +40,7 @@ def parse_from_grammar(src: str, grammar: Grammar) -> ASTRoot:
     
     return parse_string(src, prs)
 
+#==================================================================================#
 
 def import_module_from_file(module_name: str, file_path: PathLike):
     spec = util.spec_from_file_location(module_name, file_path)
@@ -62,7 +63,7 @@ def get_transformers(fp: PathLike, extension: str=".py") -> TransformMatches:
     try:
         module = import_module_from_file(fp.name, str(fp))
 
-        return [(cls, fp) for _, cls in inspect.getmembers(module, inspect.isclass) if matches_transform(cls)]
+        return [(cls, fp) for _, cls in inspect.getmembers(module, inspect.isclass) if inspect.getmodule(cls) == module and matches_transform(cls)]
     except:
         return []
 

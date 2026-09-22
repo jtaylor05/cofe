@@ -1,10 +1,10 @@
 from configparser import ConfigParser
 from pathlib import Path
 
-import ast
+import ast, warnings
 
-from cofe.grammar_transform import GrammarWrapper, RenameStringLeaf, ReplaceRuleBody
-from cofe.ast_transform import (
+from .grammar_transform import GrammarWrapper, RenameStringLeaf, ReplaceRuleBody
+from .ast_transform import (
     StrictCallTransformer,
     AggregateImportTransformer
 )
@@ -18,25 +18,15 @@ TEST_MODE = "test"
 
 type Pathlike = str | Path
 
-def init_config_settings(file: Path):
-    file.parent.mkdir(parents=True, exist_ok=True)
-    
-    parser = ConfigParser()
+def init_config_settings(parser: ConfigParser):
     parser.optionxform = str
     parser['env'] = { EXTENSION : '.y', 
-                      TEST_MODE : False}
-    
-    fp = Path(__file__).resolve()
-    parser['available'] = {
-        WhenTransformer.__name__:fp,
-        PrintScreenTransformer.__name__:fp,
-        SemiColonTransformer.__name__:fp,
-        DoEndTransformer.__name__:fp
-    }
+                          TEST_MODE : False}
+        
+    parser['available'] = {}
     
     parser['active'] = {}
-    with open(file, 'w') as cf:
-        parser.write(cf)
+
 
 class InvalidConfigError(Exception):
     """Raised when a config value does not exist in the configuration."""
@@ -49,12 +39,17 @@ class PackageConfigParser(ConfigParser):
         
         self.config_file = Path(config_file).resolve()
         if not self.config_file.exists():
-            init_config_settings(self.config_file)
+            init_config_settings(self)
+            self.write()
         
         self.read(self.config_file)
         
         if not self.has_section("env"):
             self.add_section("env")
+            if not self.has_option("env", EXTENSION):
+                self.set("env", EXTENSION, '.y')
+            if not self.has_option("env", TEST_MODE):
+                self.set("env", TEST_MODE, False)
         if not self.has_section("available"):
             self.add_section("available")
         if not self.has_section("active"):
@@ -69,7 +64,8 @@ class PackageConfigParser(ConfigParser):
     @property
     def test_mode(self):
         if TEST_MODE not in self['env']:
-            raise InvalidConfigError(f"No value '{TEST_MODE}' can be found in {CONFIG_FILENAME}.")
+            warnings.warn(f"No value {TEST_MODE} can be found in {self.config_file}.")
+            return False
         return self['env'].getboolean(TEST_MODE)
     
     def set_default(self, key: str, val: str):
@@ -102,15 +98,26 @@ class PackageConfigParser(ConfigParser):
     def get_active(self) -> dict[str, str]:
         return dict(self['active'])
     
+    def load(self, file=None):
+        fp = self.config_file if file is None else file
+        self.clear()
+        self.read(fp)
+    
     def write(self, dest=None):
         fp = self.config_file if dest is None else dest
         with open(fp, 'w') as cf:
             super().write(cf)
     
     def restore(self):
-        self.config_file.unlink(True)
-        init_config_settings(self.config_file)
+        init_config_settings(self)
         
+        
+def matches_transform(cls: type):
+    properties_transform = { attr for attr in dir(Transform) }
+    properties_cls = { attr for attr in dir(cls) }
+    
+    return properties_transform.issubset(properties_cls)
+
 class Transform:
         
     def apply_grammar(self, grammar : GrammarWrapper):
@@ -154,49 +161,4 @@ class Transform:
     
     def __hash__(self):
         return object.__hash__(self)
-    
-class WhenTransformer(Transform):
-    
-    def __init__(self):
-        self.iftowhen = RenameStringLeaf("'if'", "'when'")
-        self.eliftoelwhen = RenameStringLeaf("'elif'", "'elwhen'")
-        
-    def apply_grammar(self, grammar):
-        self.iftowhen.apply(grammar)
-        self.eliftoelwhen.apply(grammar)
-        
-class SemiColonTransformer(Transform):
-    
-    def __init__(self):
-        self.replace = ReplaceRuleBody("simple_stmts", """simple_stmts[list]:
-    | a=simple_stmt ';' NEWLINE { [a] } # Not needed, there for speedup
-    | a=';'.simple_stmt+ ';' NEWLINE { a }""")
-        
-    def apply_grammar(self, grammar):
-        self.replace.apply(grammar)
-        
-class DoEndTransformer(Transform):
-    def __init__(self):
-        self.braces_t = ReplaceRuleBody("block", """block[list] (memo):
-    | NEWLINE* 'do' NEWLINE* [INDENT] a=statements [DEDENT] 'end' NEWLINE* { a }
-    | simple_stmts
-    | invalid_block""")
-        
-    def apply_grammar(self, grammar):
-        self.braces_t.apply(grammar)
-
-class SystemTransformer(Transform):
-    
-    def __init__(self):
-        self.sys_t = AggregateImportTransformer("system", "sys")
-        
-    def apply_ast(self, root):
-        self.sys_t.visit(root)
-
-class PrintScreenTransformer(Transform):
-    
-    def __init__(self):
-        self.name_t = StrictCallTransformer("print_screen", "print")
-        
-    def apply_ast(self, root):
-        self.name_t.visit(root)
+   

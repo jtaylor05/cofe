@@ -11,7 +11,7 @@ from pegen.parser import Parser
 from pegen.python_generator import PythonParserGenerator
 from pegen.utils import parse_string
 
-from .configure import matches_transform
+from .transform import matches_transform
 
 type ASTRoot = ast.AST
 type PathLike = str | Path

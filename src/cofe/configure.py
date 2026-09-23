@@ -1,15 +1,9 @@
 from configparser import ConfigParser
 from pathlib import Path
 
-import ast, warnings
+import warnings, os
 
-from .grammar_transform import GrammarWrapper, RenameStringLeaf, ReplaceRuleBody
-from .ast_transform import (
-    StrictCallTransformer,
-    AggregateImportTransformer
-)
-
-MODULE_DIR = ".cenv"
+MODULE_DIR = os.environ.get("COFE_DATA_DIR", ".cenv")
 
 CONFIG_FILENAME = "config.ini"
 
@@ -105,60 +99,9 @@ class PackageConfigParser(ConfigParser):
     
     def write(self, dest=None):
         fp = self.config_file if dest is None else dest
+        fp.mkdir(parents=True, exist_ok=True)
         with open(fp, 'w') as cf:
             super().write(cf)
     
     def restore(self):
         init_config_settings(self)
-        
-        
-def matches_transform(cls: type):
-    properties_transform = { attr for attr in dir(Transform) }
-    properties_cls = { attr for attr in dir(cls) }
-    
-    return properties_transform.issubset(properties_cls)
-
-class Transform:
-        
-    def apply_grammar(self, grammar : GrammarWrapper):
-        pass
-    
-    def apply_ast(self, root : ast.AST):
-        pass
-    
-    def get_sort(self):
-        return 0
-        
-    def __lt__(self, other):
-        if not isinstance(other, Transform):
-            raise NotImplementedError("Can only compare with other Transform subclasses.")
-        return self.get_sort() < other.get_sort()
-    
-    def __le__(self, other):
-        if not isinstance(other, Transform):
-            raise NotImplementedError("Can only compare with other Transform subclasses.")
-        return self.get_sort() <= other.get_sort()
-    
-    def __eq__(self, other):
-        if not isinstance(other, Transform):
-            raise NotImplementedError("Can only compare with other Transform subclasses.")
-        return self.get_sort() == other.get_sort()
-    
-    def __ne__(self, other):
-        if not isinstance(other, Transform):
-            raise NotImplementedError("Can only compare with other Transform subclasses.")
-        return self.get_sort() != other.get_sort()
-    
-    def __ge__(self, other):
-        if not isinstance(other, Transform):
-            raise NotImplementedError("Can only compare with other Transform subclasses.")
-        return self.get_sort() >= other.get_sort()
-    
-    def __gt__(self, other):
-        if not isinstance(other, Transform):
-            raise NotImplementedError("Can only compare with other Transform subclasses.")
-        return self.get_sort() > other.get_sort()
-    
-    def __hash__(self):
-        return object.__hash__(self)
-   

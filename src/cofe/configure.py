@@ -1,7 +1,7 @@
 from configparser import ConfigParser
 from pathlib import Path
 
-import ast, warnings
+import ast, warnings, os
 
 from .grammar_transform import GrammarWrapper, RenameStringLeaf, ReplaceRuleBody
 from .ast_transform import (
@@ -9,7 +9,7 @@ from .ast_transform import (
     AggregateImportTransformer
 )
 
-MODULE_DIR = ".cenv"
+MODULE_DIR = os.environ.get("COFE_DATA_DIR", ".cenv")
 
 CONFIG_FILENAME = "config.ini"
 
@@ -105,6 +105,7 @@ class PackageConfigParser(ConfigParser):
     
     def write(self, dest=None):
         fp = self.config_file if dest is None else dest
+        fp.mkdir(parents=True, exist_ok=True)
         with open(fp, 'w') as cf:
             super().write(cf)
     

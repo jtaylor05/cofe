@@ -5,7 +5,8 @@ from importlib import util
 
 from pathlib import Path
 
-from .configure import PackageConfigParser, Transform
+from .configure import PackageConfigParser
+from .transform import Transform
 from .grammar_transform import GrammarWrapper
 from .utils import get_python_grammar, parse_from_grammar
 

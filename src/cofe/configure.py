@@ -15,7 +15,7 @@ type Pathlike = str | Path
 def init_config_settings(parser: ConfigParser):
     parser.optionxform = str
     parser['env'] = { EXTENSION : '.y', 
-                          TEST_MODE : False}
+                          TEST_MODE : "False"}
         
     parser['available'] = {}
     
@@ -43,7 +43,7 @@ class PackageConfigParser(ConfigParser):
             if not self.has_option("env", EXTENSION):
                 self.set("env", EXTENSION, '.y')
             if not self.has_option("env", TEST_MODE):
-                self.set("env", TEST_MODE, False)
+                self.set("env", TEST_MODE, "False")
         if not self.has_section("available"):
             self.add_section("available")
         if not self.has_section("active"):
@@ -79,7 +79,8 @@ class PackageConfigParser(ConfigParser):
         
     def add_active(self, cls_name: str):
         if cls_name not in self['available']:
-            raise InvalidConfigError(f"{cls_name} not one of the available transformers.")
+            print(f"WARNING: {cls_name} not one of the available transformers. Skipping.")
+            return
         self.set('active', cls_name, self['available'][cls_name])
         
     def remove_active(self, cls_name: str):
@@ -99,9 +100,12 @@ class PackageConfigParser(ConfigParser):
     
     def write(self, dest=None):
         fp = self.config_file if dest is None else dest
-        fp.parent.mkdir(parents=True, exist_ok=True)
-        with open(fp, 'w') as cf:
-            super().write(cf)
+        try:
+            Path(fp).parent.mkdir(parents=True, exist_ok=True)
+            with open(fp, 'w') as cf:
+                super().write(cf)
+        except:
+            super().write(dest)
     
     def restore(self):
         init_config_settings(self)

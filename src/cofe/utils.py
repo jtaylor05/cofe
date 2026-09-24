@@ -75,13 +75,10 @@ def gather_transformers(root: PathLike, depth: int=5, extension: str=".py") -> T
     root = Path(root).resolve()
     if not root.exists():
         raise ValueError(f"Path {root} does not exist.")
-    
     if depth == 0:
         return []
-    
     if root.is_file():
         return get_transformers(root, extension=extension)
-    
     ret = []
     for child in root.iterdir():
         if child.is_file():

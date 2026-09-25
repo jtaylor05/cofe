@@ -1,6 +1,7 @@
 import io, ast, sys
 import inspect
 from typing import Dict, Any, Type
+import functools
 
 from pathlib import Path
 from importlib import import_module, util
@@ -17,6 +18,7 @@ type ASTRoot = ast.AST
 type PathLike = str | Path
 type TransformMatches = list[tuple[type[object], Path]]
 
+@functools.cache
 def get_python_grammar() -> Grammar:
     """Returns the base Python grammar as a Grammar object. Base Grammar is loaded from pegen's python.gram file."""
     with open(Path(__file__).parent/"python.gram", 'r') as gf:
@@ -43,6 +45,10 @@ def parse_from_grammar(src: str, grammar: Grammar) -> ASTRoot:
 #==================================================================================#
 
 def import_module_from_file(module_name: str, file_path: PathLike):
+    """Attempts to dynamically import the module at the file-path into the script. If the module name already exists, returns that module."""
+    if module_name in sys.modules:
+        return sys.modules[module_name]
+    
     spec = util.spec_from_file_location(module_name, file_path)
     
     module = util.module_from_spec(spec)

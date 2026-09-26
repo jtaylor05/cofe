@@ -105,7 +105,6 @@ class PreProcessExtensionLoader(importlib.machinery.SourceFileLoader):
         if Path(path).suffix == config.extension:
             source_text = raw.decode('utf-8')
             transformed = transform_code(source_text)
-            print(transformed)
             return transformed.encode('utf-8')
         
         return raw

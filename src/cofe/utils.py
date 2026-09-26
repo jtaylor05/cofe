@@ -1,7 +1,6 @@
 import io, ast, sys
 import inspect
 from typing import Dict, Any, Type
-import functools
 
 from pathlib import Path
 from importlib import import_module, util
@@ -18,7 +17,6 @@ type ASTRoot = ast.AST
 type PathLike = str | Path
 type TransformMatches = list[tuple[type[object], Path]]
 
-@functools.cache
 def get_python_grammar() -> Grammar:
     """Returns the base Python grammar as a Grammar object. Base Grammar is loaded from pegen's python.gram file."""
     with open(Path(__file__).parent/"python.gram", 'r') as gf:

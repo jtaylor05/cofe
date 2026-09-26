@@ -43,6 +43,10 @@ def parse_from_grammar(src: str, grammar: Grammar) -> ASTRoot:
 #==================================================================================#
 
 def import_module_from_file(module_name: str, file_path: PathLike):
+    """Attempts to dynamically import the module at the file-path into the script. If the module name already exists, returns that module."""
+    if module_name in sys.modules:
+        return sys.modules[module_name]
+    
     spec = util.spec_from_file_location(module_name, file_path)
     
     module = util.module_from_spec(spec)

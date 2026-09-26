@@ -1,13 +1,11 @@
-import sys
-
-import random
-
 import argparse as ap
-
+import sys
+import subprocess
+import random
 from typing import Literal
 from pathlib import Path
 
-from . import PythonLauncher, PackageConfigParser, install_import_hook, TEST_MODE
+from .configure import PackageConfigParser, TEST_MODE
 from .utils import get_transformers, gather_transformers
 
 type PathsOrNames = Path | str
@@ -105,14 +103,15 @@ def tag_config(file_path: str, parser: PackageConfigParser=None):
 def set_tag(file_path: str, parser: PackageConfigParser):
     parser.load(file_path)
 
-def exec_command(file_path: str, remainder: list[str], debug=False, config_file=None):
-    sys.argv = [file_path] + remainder
-    print(sys.argv)
-    
-    install_import_hook()
-    
-    launcher = PythonLauncher(file_path, config_file) if config_file else PythonLauncher(file_path)
-    launcher.launch(debug) 
+def exec_command(file_path: str, remainder: list[str]):
+    child_bootstrap = "from cofe.preprocess import execute_file; execute_file()"
+    subprocess.call([
+        sys.executable,
+        "-c",
+        child_bootstrap,
+        str(Path(file_path).resolve()),
+        *remainder,
+    ])
 
 def normal_mode():
     parser = ap.ArgumentParser(
@@ -204,7 +203,7 @@ def normal_mode():
             config.write()
             
         case "exec":
-            exec_command(args.file_path, remainder, args.cofe_debug, args.cofe_tag)
+            exec_command(args.file_path, remainder)
 
 def test_mode():
     parser = ap.ArgumentParser(
@@ -218,7 +217,7 @@ def test_mode():
 
     args, remainder = parser.parse_known_args()
     
-    exec_command(args.file_path, remainder, False)
+    exec_command(args.file_path, remainder)
     
     if args.end_test:
         conf = PackageConfigParser()

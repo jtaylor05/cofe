@@ -44,6 +44,8 @@ assert add(2, 3) == 2 PLUS 3"""
 def test_when_transform():
     wrapper = GrammarWrapper(get_python_grammar())
     
+    print(wrapper)
+    
     ReplaceRuleBody("if_stmt", """if_stmt[ast.If]:
     | invalid_if_stmt
     | 'if' '(' a=named_expression ')' ':' b=block c=elif_stmt { ast.If(test=a, body=b, orelse=c or [], LOCATIONS) }
@@ -52,9 +54,11 @@ def test_when_transform():
     InjectAlt("invalid_if_stmt", """'if' named_expression { self.raise_syntax_error("expected '('") }""", True).apply(wrapper)
     InjectAlt("invalid_if_stmt", """'if' '(' named_expression { self.raise_syntax_error("expected ')'") }""", True).apply(wrapper)
     
+    #print(wrapper)
+    
     RenameLeaf(StringLeaf, "'if'", "'when'").apply(wrapper)
     
-    print(wrapper)
+    #print(wrapper)
     
     parser_cls = generate_ython_parser(wrapper.grammar)
     

@@ -22,23 +22,10 @@ def get_cli():
     parser.add_argument("-m", "--module", dest="mod", nargs=argparse.REMAINDER, type=str)
     return parser
 
-
-def run_help(executable: str | None = None, new_name: str = "cofe") -> None:
-    _ = executable
-    print(f"usage: {new_name} [-h] [-m MODULE] [config|transform|exec] ...")
-    print()
-    print("A CounterFactual Environment python interpreter; completely compatible with standard python.")
-    print()
-    print("options:")
-    print("  -h, --help            show this help message and exit")
-    print("  -m MODULE, --module MODULE")
-    print("                       run a cofe submodule")
-    print()
-    print("modules:")
-    print("  config               configure interpreter settings and modules")
-    print("  transform            manage transformer configuration and discovery")
-    print("  exec                 acts as an entry point into module code")
-
+def run_help(executable: str, new_name: str = "cofe") -> None:
+    out = subprocess.run([executable, "-h"], capture_output=True, text=True).stdout
+    out = out.replace(f"usage: {executable}", f"usage: {new_name}")
+    print(out)
 
 def handle_custom_module(module: str, args=None):
     args = [] if args is None else list(args)

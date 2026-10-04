@@ -5,10 +5,10 @@ import functools
 import importlib.machinery
 from pathlib import Path
 
-from .configure import PackageConfigParser
-from .grammar_transform import GrammarWrapper
-from .transform import Transform, matches_transform
-from .utils import get_python_grammar, import_module_from_file, parse_from_grammar
+from cofe.config.configure import PackageConfigParser
+from cofe.transform.grammar_transform import GrammarWrapper
+from cofe.transform.transform import Transform, matches_transform
+from cofe.utils import get_python_grammar, import_module_from_file, parse_from_grammar
 
 @functools.cache
 def get_transformer_src():
@@ -59,6 +59,21 @@ def transform_code(source: str) -> str:
 
     return transformed
 
+def install_import_hook():
+    config = PackageConfigParser()
+    
+    loader_details = [
+        (PreProcessExtensionLoader, [config.extension]),
+        (importlib.machinery.SourceFileLoader, importlib.machinery.SOURCE_SUFFIXES)
+    ]
+    path_hook = importlib.machinery.FileFinder.path_hook(*loader_details)
+
+    # Insert before the default hooks so it takes priority
+    sys.path_hooks.insert(0, path_hook)
+
+    # Clear the finder cache so existing sys.path entries pick up the new hook
+    sys.path_importer_cache.clear()
+
 def execute_file():
     """Execute the target file after installing the import hook."""
     install_import_hook()
@@ -78,21 +93,6 @@ def execute_file():
         "__builtins__": __builtins__,
     }
     exec(code, main_globals, main_globals)
-
-def install_import_hook():
-    config = PackageConfigParser()
-    
-    loader_details = [
-        (PreProcessExtensionLoader, [config.extension]),
-        (importlib.machinery.SourceFileLoader, importlib.machinery.SOURCE_SUFFIXES)
-    ]
-    path_hook = importlib.machinery.FileFinder.path_hook(*loader_details)
-
-    # Insert before the default hooks so it takes priority
-    sys.path_hooks.insert(0, path_hook)
-
-    # Clear the finder cache so existing sys.path entries pick up the new hook
-    sys.path_importer_cache.clear()
 
 class PreProcessExtensionLoader(importlib.machinery.SourceFileLoader):
     def get_data(self, path):

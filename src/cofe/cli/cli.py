@@ -8,59 +8,74 @@ from cofe.cli.config import main as config_main
 from cofe.cli.exec import main as exec_main
 from cofe.cli.transform import main as transform_main
 
-_AVAILABLE_MODULES = {
-    "config",
-    "transform",
-    "exec"
-}
+_AVAILABLE_MODULES = {"config", "transform", "exec"}
+
 
 def get_cli():
     parser = argparse.ArgumentParser(
-        prog="cofe", 
+        prog="cofe",
         description="A CounterFactual Environment python interpreter; completely compatible with standard python.",
-        add_help=False)
+        add_help=False,
+    )
     parser.add_argument("-v", "--version", action="version", version=f"cofe {version('cofe')}")
     parser.add_argument("-h", "--help", action="store_true")
-    parser.add_argument("-m", nargs=argparse.REMAINDER, dest="mod", type=str)
+    parser.add_argument("-m", "--module", dest="mod", nargs=argparse.REMAINDER, type=str)
     return parser
 
-def run_help(executable: str, new_name: str = "cofe") -> None:
-    out = subprocess.run([executable, "-h"], capture_output=True, text=True).stdout
-    out = out.replace(f'usage: {executable}', f'usage: {new_name}')
-    print(out)
-    
-def run_cmd(executable: str, *args) -> None:
-    subprocess.run([executable, *args], check=True)
+
+def run_help(executable: str | None = None, new_name: str = "cofe") -> None:
+    _ = executable
+    print(f"usage: {new_name} [-h] [-m MODULE] [config|transform|exec] ...")
+    print()
+    print("A CounterFactual Environment python interpreter; completely compatible with standard python.")
+    print()
+    print("options:")
+    print("  -h, --help            show this help message and exit")
+    print("  -m MODULE, --module MODULE")
+    print("                       run a cofe submodule")
+    print()
+    print("modules:")
+    print("  config               configure interpreter settings and modules")
+    print("  transform            manage transformer configuration and discovery")
+    print("  exec                 acts as an entry point into module code")
+
 
 def handle_custom_module(module: str, args=None):
-    args = [] if args is None else args
-    
+    args = [] if args is None else list(args)
+
     match module:
         case "config":
-            config_main(args)
-        
+            return config_main(args)
         case "exec":
-            exec_main(args)
-        
+            return exec_main(args)
         case "transform":
-            transform_main(args)
+            return transform_main(args)
+        case _:
+            raise ValueError(f"Unknown module: {module!r}")
 
-def main():
-    args = sys.argv[1:]
+
+def main(argv=None):
+    args = list(sys.argv[1:] if argv is None else argv)
     cli = get_cli()
     parsed, remaining = cli.parse_known_args(args)
-        
+
     if parsed.help:
-        SystemExit(run_help(sys.executable))
-        
+        run_help(sys.executable)
+        return 0
+
     if parsed.mod:
         module = parsed.mod[0]
         module_args = parsed.mod[1:]
         if module in _AVAILABLE_MODULES:
-            SystemExit(handle_custom_module(module, module_args))
-    
-    SystemExit(run_cmd(sys.executable, *args))
+            return handle_custom_module(module, module_args)
+        remaining.extend(["-m", module, *module_args])
 
-if __name__=="__main__":
-    main()
-    
+    if remaining and remaining[0] in _AVAILABLE_MODULES:
+        return handle_custom_module(remaining[0], remaining[1:])
+
+    run_help(sys.executable)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

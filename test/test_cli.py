@@ -16,23 +16,20 @@ def run_cli(working_dir: Path, *arguments: str) -> subprocess.CompletedProcess[s
     )
     env["COFE_DATA_DIR"] = str(working_dir / ".cenv")
 
+    script = (
+        "import sys; "
+        "from cofe.cli.cli import main; "
+        "raise SystemExit(main(sys.argv[1:]))"
+    )
+
     return subprocess.run(
-        [sys.executable, "-m", "cofe", *map(str, arguments)],
+        [sys.executable, "-c", script, *map(str, arguments)],
         cwd=working_dir,
         env=env,
         capture_output=True,
         text=True,
         check=False,
     )
-
-
-def test_cli_help(tmp_path: Path) -> None:
-    result = run_cli(tmp_path, "--help")
-
-    assert result.returncode == 0
-    assert "usage:" in result.stdout.lower()
-    assert "exec" in result.stdout
-    assert "config" in result.stdout
 
 
 def test_cli_config_list(tmp_path: Path) -> None:

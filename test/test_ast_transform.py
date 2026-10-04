@@ -1,13 +1,15 @@
 import ast
+
 import pytest
-from cofe import (
+
+from cofe.transform.ast_transform import (
+    AggregateFuncTransformer,
+    AggregateImportTransformer,
+    AggregateTransformer,
     StrictCallTransformer,
     StrictFuncDefTransformer,
-    StrictImportTransformer,
     StrictImportFromTransformer,
-    AggregateTransformer,
-    AggregateFuncTransformer,
-    AggregateImportTransformer
+    StrictImportTransformer,
 )
 
 def test_call_transformer():

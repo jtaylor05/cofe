@@ -1,4 +1,9 @@
 import argparse
+from pathlib import Path
+
+from cofe.transform.transform import transform_code
+
+type PathLike = str | Path
 
 def get_cli():
     parser = argparse.ArgumentParser(prog="cofe-transform", description="Module to transform python files in the current cofe environment.")
@@ -11,6 +16,22 @@ def get_cli():
     from_parser.add_argument("-c", "--config", type=str, help="Path to a config file to use for the transformation. If not provided, will use the current environment config.")
     
     return parser
+
+def transform_file(source: PathLike, output: PathLike = None, config: PathLike = None):
+    source_path = Path(source)
+    output_path = Path(output) if output else None
+    config_path = Path(config) if config else None
+
+    with open(source_path, "r") as f:
+        source_code = f.read()
+
+    transformed_code = transform_code(source_code, config_file=config_path)
+
+    if output_path:
+        with open(output_path, "w") as f:
+            f.write(transformed_code)
+    else:
+        print(transformed_code)
 
 def main(args):
     parser = get_cli()

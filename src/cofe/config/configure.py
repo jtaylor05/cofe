@@ -10,7 +10,7 @@ CONFIG_FILENAME = "config.ini"
 EXTENSION = "extension"
 TEST_MODE = "test"
 
-type Pathlike = str | Path
+type PathLike = str | Path
 
 def init_config_settings(parser: ConfigParser):
     parser.optionxform = str
@@ -27,11 +27,12 @@ class InvalidConfigError(Exception):
     pass
 
 class PackageConfigParser(ConfigParser):
-    def __init__(self, config_file: str = Path(MODULE_DIR, CONFIG_FILENAME)):
+    def __init__(self, config_file: PathLike = None):
         super().__init__()
         self.optionxform = str
         
-        self.config_file = Path(config_file).resolve()
+        config_file = Path(MODULE_DIR, CONFIG_FILENAME) if config_file is None else Path(config_file)
+        self.config_file = config_file.resolve()
         if not self.config_file.exists():
             init_config_settings(self)
             self.write()
@@ -68,7 +69,7 @@ class PackageConfigParser(ConfigParser):
         else:
             raise ValueError(f"Key {key} is not contained in 'env'.")
         
-    def add_transformer(self, cls_name: str, cls_file: Pathlike):
+    def add_transformer(self, cls_name: str, cls_file: PathLike):
         self.set('available', cls_name, str(Path(cls_file)))
         
     def remove_transformer(self, cls_name: str):

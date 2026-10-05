@@ -1,63 +1,10 @@
-import ast
 import sys
-import functools
 
 import importlib.machinery
 from pathlib import Path
 
 from cofe.config.configure import PackageConfigParser
-from cofe.transform.grammar_transform import GrammarWrapper
-from cofe.transform.transform import Transform, matches_transform
-from cofe.utils import get_python_grammar, import_module_from_file, parse_from_grammar
-
-@functools.cache
-def get_transformer_src():
-    config = PackageConfigParser()
-    
-    _modules = {}
-            
-    transformers: list[Transform] = []
-    
-    for cls, f in config.get_active().items():
-        p = Path(f)
-        module_name = p.name
-        
-        if module_name in _modules:
-            class_var = getattr(_modules[module_name], cls)
-            if matches_transform(class_var):
-                transformers.append(class_var())
-            continue
-        
-        module = import_module_from_file(module_name, p)
-        
-        _modules[module_name] = module
-        class_var = getattr(module, cls)
-        if matches_transform(class_var):
-            transformers.append(class_var())
-    
-    transformers.sort(key=lambda t: t.get_sort())
-    return transformers
-
-def transform_code(source: str) -> str:
-    grammar = GrammarWrapper(get_python_grammar())
-    
-    transformers = get_transformer_src()
-            
-    for t in transformers:
-        t.apply_grammar(grammar)
-    
-    root = None
-    try:
-        root = parse_from_grammar(source, grammar)
-    except Exception as e:
-        raise e
-    
-    for t in transformers:
-        t.apply_ast(root)
-        
-    transformed = ast.unparse(root)
-
-    return transformed
+from cofe.transform.transform import transform_code
 
 def install_import_hook():
     config = PackageConfigParser()

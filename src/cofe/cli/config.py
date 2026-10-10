@@ -47,12 +47,14 @@ def add_transformers(targets: list[PathsOrNames], parser: PackageConfigParser = 
     config = PackageConfigParser() if parser is None else parser
     for name in _get_transformer_names(targets):
         config.add_active(name)
+    config.write()
     
 def remove_transformers(targets: list[PathsOrNames], parser: PackageConfigParser = None):
     config = PackageConfigParser() if parser is None else parser
        
     for name in _get_transformer_names(targets):
         config.remove_active(name)
+    config.write()
 
 def find_transformers(roots: list[Path], parser: PackageConfigParser = None, depth=5):
     config = PackageConfigParser() if parser is None else parser
@@ -63,6 +65,7 @@ def find_transformers(roots: list[Path], parser: PackageConfigParser = None, dep
             config.add_transformer(cls.__name__, fp)
     except Exception as e:
         raise ValueError(f"Input file is incorrect. {e}")
+    config.write()
     
 def display_config(parser: PackageConfigParser = None):
     config = PackageConfigParser() if parser is None else parser

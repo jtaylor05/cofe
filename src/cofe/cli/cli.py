@@ -60,7 +60,7 @@ def main(argv=None):
     if remaining and remaining[0] in _AVAILABLE_MODULES:
         return handle_custom_module(remaining[0], remaining[1:])
 
-    run_help(sys.executable)
+    exec_main(remaining)
     return 0
 
 

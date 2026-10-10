@@ -233,24 +233,3 @@ class InjectAlt(GrammarTransform):
         else:
             rule.rhs.alts = rule.rhs.alts + new_alts
         wrapper.regather_names()  # new alt may have new leaves, so rebuild the nametable
- 
-if __name__ == "__main__":
-    from pegen.utils import generate_parser
- 
-    src = """
-    start: sum NEWLINE ENDMARKER { sum }
-    sum: sum '+' term { sum + term } | term { term }
-    term: NUMBER { int(number.string) }
-    """
-    grammar = parse_string(src, GrammarParser)
-    wrapper = GrammarWrapper(grammar)
- 
-    # rename the '+' operator to '@'
-    transform = RenameLeaf(StringLeaf, "'+'", "'@'")
-    transform.apply(wrapper)
- 
-    print(wrapper)  # sum: sum '@' term { ... } | term { ... }
- 
-    parser_class = generate_parser(wrapper, parser_name="GeneratedParser")
-    result = parse_string("1@2@3", parser_class)
-    print(result)  # 6

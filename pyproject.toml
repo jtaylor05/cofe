@@ -22,7 +22,7 @@ license = "MIT"
 license-files = ["LICEN[CS]E*"]
 
 [project.scripts]
-cofe = "cofe.__main__:main"
+cofe = "cofe.cli.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/jtaylor05/cofe"

@@ -101,6 +101,7 @@ class PackageConfigParser(ConfigParser):
     
     def write(self, dest=None):
         fp = self.config_file if dest is None else dest
+        print(fp, dest)
         try:
             Path(fp).parent.mkdir(parents=True, exist_ok=True)
             with open(fp, 'w') as cf:

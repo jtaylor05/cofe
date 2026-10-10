@@ -73,25 +73,15 @@ def gather_names(grammar: Grammar) -> NameTable:
 
 class GrammarWrapper(Grammar):
     
-    def __init__(self, grammar: Grammar):
-        self.grammar: Grammar = grammar
-        self.names: NameTable = gather_names(grammar)
-    
-    @property
-    def rules(self):
-        return self.grammar.rules
-    
-    @property
-    def metas(self):
-        return self.grammar.metas
+    def __init__(self, grammar: Grammar | None = None):
+        self.rules = dict(grammar.rules)
+        self.metas = dict(grammar.metas)
+        self.names: NameTable = gather_names(self)
     
     def regather_names(self):
-        self.names = gather_names(self.grammar)
-        
-    def set_node_name(self, leaf: Leaf, new_value: str):
-        self.set_type_name(type(leaf), leaf.value, new_value)
+        self.names = gather_names(self)
     
-    def set_type_name(self, type: Type, value: str, new_value:str):
+    def set_leaf_name(self, type: Type[NameLeaf] | Type[StringLeaf], value: str, new_value:str):
         key, new_key = (type, value), (type, new_value)
         if key not in self.names:
             raise ValueError(f"Leaves of type {type} and value {value} not in nametable.")
@@ -102,15 +92,6 @@ class GrammarWrapper(Grammar):
             node.value = new_value
         
         self.names[new_key] = self.names.pop(key)
-    
-    def __str__(self) -> str:
-        return self.grammar.__str__()
-
-    def __repr__(self) -> str:
-        return self.grammar.__repr__()
-
-    def __iter__(self):
-        yield from self.grammar
         
 def _parse_fragment(rule_source: str) -> Rule:
     """
@@ -148,7 +129,7 @@ class RenameLeaf(GrammarTransform):
     new: str
  
     def apply(self, wrapper: GrammarWrapper) -> None:
-        wrapper.set_type_name(self.leaf_type, self.old, self.new)
+        wrapper.set_leaf_name(self.leaf_type, self.old, self.new)
  
 @dataclass
 class RenameStringLeaf(GrammarTransform):
@@ -159,7 +140,7 @@ class RenameStringLeaf(GrammarTransform):
     new: str
  
     def apply(self, wrapper: GrammarWrapper) -> None:
-        wrapper.set_type_name(StringLeaf, self.old, self.new)
+        wrapper.set_leaf_name(StringLeaf, self.old, self.new)
         
 @dataclass
 class RenameNameLeaf(GrammarTransform):
@@ -170,7 +151,7 @@ class RenameNameLeaf(GrammarTransform):
     new: str
  
     def apply(self, wrapper: GrammarWrapper) -> None:
-        wrapper.set_type_name(NameLeaf, self.old, self.new)
+        wrapper.set_leaf_name(NameLeaf, self.old, self.new)
  
  
 @dataclass
@@ -181,14 +162,13 @@ class RenameRule(GrammarTransform):
     new: str
  
     def apply(self, wrapper: GrammarWrapper) -> None:
-        grammar = wrapper.grammar
-        if self.old not in grammar.rules:
+        if self.old not in wrapper.rules:
             raise KeyError(f"no such rule: {self.old!r}")
-        rule = grammar.rules.pop(self.old)
+        rule = wrapper.rules.pop(self.old)
         rule.name = self.new
-        grammar.rules[self.new] = rule
+        wrapper.rules[self.new] = rule
         # Every reference elsewhere in the grammar is a NameLeaf(self.old)
-        wrapper.set_type_name(NameLeaf, self.old, self.new)
+        wrapper.set_leaf_name(NameLeaf, self.old, self.new)
  
  
 @dataclass
@@ -199,15 +179,14 @@ class ReplaceRuleBody(GrammarTransform):
     new_source: str  # e.g. "sum: expr '+' expr { BinOp(expr, Add(), expr) }"
  
     def apply(self, wrapper: GrammarWrapper) -> None:
-        grammar = wrapper.grammar
-        if self.rule_name not in grammar.rules:
+        if self.rule_name not in wrapper.rules:
             raise KeyError(f"no such rule: {self.rule_name!r}")
         fragment = _parse_fragment(self.new_source)
         if fragment.name != self.rule_name:
             raise ValueError(
                 f"fragment defines {fragment.name!r}, expected {self.rule_name!r}"
             )
-        grammar.rules[self.rule_name].rhs = fragment.rhs
+        wrapper.rules[self.rule_name].rhs = fragment.rhs
         
         wrapper.regather_names()  # new rule may have new leaves, so rebuild the nametable
  
@@ -221,8 +200,7 @@ class InjectAlt(GrammarTransform):
     prepend: bool = False  # PEG tries alts in order -- prepend for higher priority
  
     def apply(self, wrapper: GrammarWrapper) -> None:
-        grammar = wrapper.grammar
-        rule = grammar.rules[self.rule_name]
+        rule = wrapper.rules[self.rule_name]
         # Wrap the single alt in a throwaway rule so the parser gives us
         # back a real Alt object via its Rhs.
         wrapper_source = f"_tmp: {self.alt_source}\n"

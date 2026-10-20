@@ -3,7 +3,7 @@ import inspect
 from typing import Dict, Any, Type
 
 from pathlib import Path
-from importlib import import_module, util
+from importlib import util
 
 from pegen.grammar import Grammar
 from pegen.grammar_parser import GeneratedParser as GrammarParser
@@ -11,7 +11,7 @@ from pegen.parser import Parser
 from pegen.python_generator import PythonParserGenerator
 from pegen.utils import parse_string
 
-from cofe.transform.transform import matches_transform
+from cofe.transform.transformer import matches_transform
 
 type ASTRoot = ast.AST
 type PathLike = str | Path

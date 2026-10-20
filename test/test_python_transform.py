@@ -24,7 +24,7 @@ def test_plus_transform():
     wrapper = GrammarWrapper(get_python_grammar())
     RenameLeaf(StringLeaf, "'+'", "'PLUS'").apply(wrapper)
 
-    parser_cls = generate_ython_parser(wrapper.grammar)
+    parser_cls = generate_ython_parser(wrapper)
 
     src = """def add(a, b):
     return a PLUS b
@@ -61,7 +61,7 @@ def test_when_transform():
 
     RenameLeaf(StringLeaf, "'if'", "'when'").apply(wrapper)
 
-    parser_cls = generate_ython_parser(wrapper.grammar)
+    parser_cls = generate_ython_parser(wrapper)
 
     src = """
 when (x > 0):

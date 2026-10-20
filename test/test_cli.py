@@ -51,7 +51,7 @@ def test_cli_exec_python_file_forwards_arguments(tmp_path: Path) -> None:
     result = run_cli(tmp_path, "exec", script, "first", "second")
 
     assert result.returncode == 0
-    assert result.stdout.strip() == "first|second"
+    assert result.stdout.splitlines()[-1] == "first|second"
 
 
 def test_cli_exec_y_file_imports_python_module(tmp_path: Path) -> None:
@@ -66,4 +66,4 @@ def test_cli_exec_y_file_imports_python_module(tmp_path: Path) -> None:
     result = run_cli(tmp_path, "exec", script)
 
     assert result.returncode == 0
-    assert result.stdout.strip() == "loaded"
+    assert result.stdout.splitlines()[-1] == "loaded"

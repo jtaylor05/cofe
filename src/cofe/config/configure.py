@@ -3,6 +3,11 @@ from pathlib import Path
 
 import warnings, os
 
+__all__ = [
+    "PackageConfigParser",
+    "InvalidConfigError"
+]
+
 MODULE_DIR = os.environ.get("COFE_DATA_DIR", ".cenv")
 
 CONFIG_FILENAME = "config.ini"

@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 import ast
+from typing import Union
 
 from cofe.transform.grammar_transform import GrammarWrapper
 
 from pathlib import Path
 
-type PathLike = str | Path
-type AST = ast.AST
+PathLike = Union[str, Path]
+AST = ast.AST
 
 def matches_transform(cls: type):
     properties_transform = { attr for attr in dir(Transform) }

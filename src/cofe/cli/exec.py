@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 from typing import Any
+from typing import Union
 
 import argparse
 from pathlib import Path
 import subprocess
 import sys
 
-type PathLike = str | Path
+PathLike = Union[str, Path]
 
 def get_cli():
     parser = argparse.ArgumentParser(prog="cofe-exec", description="Module to execute python files in the current cofe environment.")

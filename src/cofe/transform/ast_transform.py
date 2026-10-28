@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ast
 import types
 from typing import Type
@@ -6,8 +8,8 @@ from dataclasses import dataclass
 
 from pegen.grammar import Grammar
 
-type ASTNode = ast.AST
-type PropertyName = str
+ASTNode = ast.AST
+PropertyName = str
 
 class ASTTransformer(ast.NodeTransformer):
     def __init__(self, type):

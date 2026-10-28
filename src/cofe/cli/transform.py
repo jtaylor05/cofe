@@ -13,10 +13,10 @@ def get_cli():
     
     cmd_subparsers = parser.add_subparsers(title="op", dest="cmd")
     
-    from_parser = cmd_subparsers.add_parser("from", help="Transform a file to another file.")
-    from_parser.add_argument("source", type=str, help="Python or cofe environment file.")
-    from_parser.add_argument("--to", type=str, required=True, help="Output file path. If not provided, will print to stdout.")
-    from_parser.add_argument("-c", "--config", type=str, help="Path to a config file to use for the transformation. If not provided, will use the current environment config.")
+    from_parser = cmd_subparsers.add_parser("from", help="Transform a cofe file into raw executable python.")
+    from_parser.add_argument("source", type=str, help="cofe environment file.")
+    from_parser.add_argument("--to", type=str, default=None, help="Output file path. If not provided, will print to stdout.")
+    from_parser.add_argument("-c", "--config", type=str, default=None, help="Path to a config file to use for the transformation. If not provided, will use the current environment config.")
     
     return parser
 
@@ -42,6 +42,6 @@ def main(args):
     
     if parsed.cmd:
         if parsed.cmd == "from":
-            pass
+            transform_file(parsed.source, parsed.to, parsed.config)
     
     

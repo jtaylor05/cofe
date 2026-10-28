@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import io, ast, sys, tokenize
 import inspect
-from importlib import import_module
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from pathlib import Path
@@ -49,15 +48,6 @@ def parse_from_grammar(
     tokens = tokenize.generate_tokens(io.StringIO(src).readline)
     parser = prs(Tokenizer(tokens), py_version=py_version)
     return parser.parse("file")
-
-
-def unparse_ast(root: ast.AST) -> str:
-    unparse = getattr(ast, "unparse", None)
-    if unparse is not None:
-        return unparse(root)
-
-    astunparse = import_module("astunparse")
-    return astunparse.unparse(root).rstrip("\n")
 
 #==================================================================================#
 

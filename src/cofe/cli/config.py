@@ -19,6 +19,10 @@ def get_cli():
     
     cmd_subparsers = parser.add_subparsers(title="op", dest="cmd")
     
+    get = cmd_subparsers.add_parser("get", help="Displays current value from config.")
+    get.add_argument("--path", "-p", required=False, type=str, default=None, help="Specify path to config file to check.")
+    get.add_argument("key", help="Config value to get. Format as such 'section.option'.")
+    
     add = cmd_subparsers.add_parser("add", help="Add transformers to the current environment.")
     add.add_argument("transformers", nargs='+', help="Files and class names to be added.")
     
@@ -45,6 +49,13 @@ def _get_transformer_names(targets: list[PathsOrNames]) -> list[str]:
     
     return cls_names + [cls.__name__ for p in paths for cls, _ in get_transformers(p)]
 
+
+def get_config_value(key: str, conf: str = None):
+    config = PackageConfigParser(config_file=conf)
+    
+    section, option = key.split(".")
+    
+    print(config.get(section, option))
 
 def add_transformers(targets: list[PathsOrNames], parser: PackageConfigParser = None):
     config = PackageConfigParser() if parser is None else parser
@@ -84,6 +95,8 @@ def main(args):
         sys.exit(0)
     
     if args.cmd:
+        if args.cmd == "get":
+            get_config_value(args.key, args.path)
         if args.cmd == "add":
             add_transformers(args.transformers)
         elif args.cmd == "remove":

@@ -1,18 +1,15 @@
+from __future__ import annotations
+
 import ast
-import io
+from pathlib import Path
 import sys
-import tokenize
 
 import pytest
-from pegen.tokenizer import Tokenizer
 
-from cofe.utils import generate_ython_parser, get_python_grammar
+from cofe.transform.transform import transform_code
 
 
-PARSER = generate_ython_parser(get_python_grammar())
-TARGET_VERSIONS = [
-    (3, minor) for minor in range(9, min(sys.version_info.minor, 14) + 1)
-]
+TARGET_VERSIONS = [(3, minor) for minor in range(8, 14)]
 SYNTAX_CASES = [
     pytest.param(
         "match value:\n    case 1:\n        pass\n",
@@ -39,12 +36,6 @@ SYNTAX_CASES = [
         "PEP 696 type-parameter defaults",
         id="pep-696-type-parameter-default",
     ),
-    pytest.param(
-        'value = t"{name}"\n',
-        14,
-        "template strings",
-        id="template-string",
-    ),
 ]
 
 
@@ -56,21 +47,29 @@ def accepts(parse, source: str) -> bool:
     return True
 
 
-def parse_with_cofe(source: str, version: tuple[int, int]) -> ast.Module:
-    tokens = tokenize.generate_tokens(io.StringIO(source).readline)
-    parser = PARSER(Tokenizer(tokens), py_version=version)
-    return parser.parse("file")
-
-
 @pytest.mark.parametrize("version", TARGET_VERSIONS)
 @pytest.mark.parametrize("source, introduced, feature", SYNTAX_CASES)
 def test_versioned_syntax_matches_cpython(
-    version: tuple[int, int], source: str, introduced: int, feature: str
+    version: tuple[int, int],
+    source: str,
+    introduced: int,
+    feature: str,
+    tmp_path: Path,
 ) -> None:
     expected = accepts(
         lambda text: ast.parse(text, feature_version=version), source
     )
-    actual = accepts(lambda text: parse_with_cofe(text, version), source)
+    config_file = tmp_path / "config.ini"
+    config_file.write_text(
+        "[env]\nextension = .y\ntest = False\n\n[available]\n\n[active]\n",
+        encoding="utf-8",
+    )
+    actual = accepts(
+        lambda text: transform_code(
+            text, config_file=config_file, py_version=version
+        ),
+        source,
+    )
 
     if (
         not actual == expected

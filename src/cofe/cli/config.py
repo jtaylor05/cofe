@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 import argparse
 from pathlib import Path
 import sys
+from typing import Union
 
 from cofe.config.configure import PackageConfigParser
 from cofe.utils import gather_transformers, get_transformers
 
-type PathsOrNames = Path | str
+PathsOrNames = Union[Path, str]
 
 def get_cli():
     parser = argparse.ArgumentParser(prog="cofe-config", description="Module to configure current cofe environment.")
@@ -81,15 +84,14 @@ def main(args):
         sys.exit(0)
     
     if args.cmd:
-        match args.cmd:
-            case "add":
-                add_transformers(args.transformers)
-            case "remove":
-                remove_transformers(args.transformers)
-            case "find":
-                find_transformers([Path(p) for p in args.paths], depth=args.depth)
-            case "list":
-                display_config()
+        if args.cmd == "add":
+            add_transformers(args.transformers)
+        elif args.cmd == "remove":
+            remove_transformers(args.transformers)
+        elif args.cmd == "find":
+            find_transformers([Path(p) for p in args.paths], depth=args.depth)
+        elif args.cmd == "list":
+            display_config()
                 
     if args.tag:
         config = PackageConfigParser()

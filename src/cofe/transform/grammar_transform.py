@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import textwrap
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Set, Tuple, Type
+from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
 from pegen.grammar import (
     Alt,
@@ -18,8 +20,8 @@ from pegen.grammar import (
 from pegen.grammar_parser import GeneratedParser as GrammarParser
 from pegen.utils import parse_string
 
-type NameTable = Dict[Tuple[Type, str], List[Leaf]]
-type LeafKey = Tuple[Type, str]
+NameTable = Dict[Tuple[Type, str], List[Leaf]]
+LeafKey = Tuple[Type, str]
 
 class _LeafCollector(GrammarVisitor):
     """Walks a Rule and records every NameLeaf/StringLeaf occurrence."""
@@ -73,7 +75,7 @@ def gather_names(grammar: Grammar) -> NameTable:
 
 class GrammarWrapper(Grammar):
     
-    def __init__(self, grammar: Grammar | None = None):
+    def __init__(self, grammar: Optional[Grammar] = None):
         self.rules = dict(grammar.rules)
         self.metas = dict(grammar.metas)
         self.names: NameTable = gather_names(self)
@@ -81,7 +83,7 @@ class GrammarWrapper(Grammar):
     def regather_names(self):
         self.names = gather_names(self)
     
-    def set_leaf_name(self, type: Type[NameLeaf] | Type[StringLeaf], value: str, new_value:str):
+    def set_leaf_name(self, type: Union[Type[NameLeaf], Type[StringLeaf]], value: str, new_value:str):
         key, new_key = (type, value), (type, new_value)
         if key not in self.names:
             raise ValueError(f"Leaves of type {type} and value {value} not in nametable.")

@@ -30,15 +30,13 @@ def run_help(executable: str, new_name: str = "cofe") -> None:
 def handle_custom_module(module: str, args=None):
     args = [] if args is None else list(args)
 
-    match module:
-        case "config":
-            return config_main(args)
-        case "exec":
-            return exec_main(args)
-        case "transform":
-            return transform_main(args)
-        case _:
-            raise ValueError(f"Unknown module: {module!r}")
+    if module == "config":
+        return config_main(args)
+    if module == "exec":
+        return exec_main(args)
+    if module == "transform":
+        return transform_main(args)
+    raise ValueError(f"Unknown module: {module!r}")
 
 
 def main(argv=None):

@@ -14,7 +14,7 @@ The cofe package is available on PyPI. It currently does not support uv so pleas
 ```bash
 pip install cofe
 ```
-Currently cofe only supports **Python 3.13**. I aim to increase the number of available versions as more of Python's grammar is integrated into the tool.
+cofe supports Python **3.8 through 3.14**. The parser uses the active Python version by default, while grammar compatibility tests can target a specific version.
 
 ## Quick Start
 

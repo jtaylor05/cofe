@@ -1,6 +1,9 @@
-import io, ast, sys
+from __future__ import annotations
+
+import io, ast, sys, tokenize
 import inspect
-from typing import Dict, Any, Type
+from importlib import import_module
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from pathlib import Path
 from importlib import util
@@ -8,14 +11,14 @@ from importlib import util
 from pegen.grammar import Grammar
 from pegen.grammar_parser import GeneratedParser as GrammarParser
 from pegen.parser import Parser
+from pegen.tokenizer import Tokenizer
 from pegen.python_generator import PythonParserGenerator
 from pegen.utils import parse_string
 
 from cofe.transform.transformer import matches_transform
 
-type ASTRoot = ast.AST
-type PathLike = str | Path
-type TransformMatches = list[tuple[type[object], Path]]
+PathLike = Union[str, Path]
+TransformMatches = List[Tuple[Type[object], Path]]
 
 def get_python_grammar() -> Grammar:
     """Returns the base Python grammar as a Grammar object. Base Grammar is loaded from pegen's python.gram file."""
@@ -35,10 +38,26 @@ def generate_ython_parser(grammar: Grammar) -> Type[Parser]:
     class_name = grammar.metas.get("class", "PythonParser")
     return ns[class_name]
 
-def parse_from_grammar(src: str, grammar: Grammar) -> ASTRoot:
+def parse_from_grammar(
+    src: str, grammar: Grammar, py_version: Optional[Tuple[int, int]] = None
+) -> ast.AST:
     prs = generate_ython_parser(grammar)
-    
-    return parse_string(src, prs)
+
+    if py_version is None:
+        py_version = sys.version_info[:2]
+
+    tokens = tokenize.generate_tokens(io.StringIO(src).readline)
+    parser = prs(Tokenizer(tokens), py_version=py_version)
+    return parser.parse("file")
+
+
+def unparse_ast(root: ast.AST) -> str:
+    unparse = getattr(ast, "unparse", None)
+    if unparse is not None:
+        return unparse(root)
+
+    astunparse = import_module("astunparse")
+    return astunparse.unparse(root).rstrip("\n")
 
 #==================================================================================#
 
@@ -57,7 +76,7 @@ def import_module_from_file(module_name: str, file_path: PathLike):
     
     return module
 
-def get_transformers(fp: PathLike, extension: str=".py") -> TransformMatches:
+def get_transformers(fp: str | Path, extension: str=".py") -> TransformMatches:
     fp = Path(fp).resolve()
     if not fp.is_file():
         raise ValueError(f"Input file {fp} is not a file.")
@@ -71,7 +90,7 @@ def get_transformers(fp: PathLike, extension: str=".py") -> TransformMatches:
     except:
         return []
 
-def gather_transformers(root: PathLike, depth: int=5, extension: str=".py") -> TransformMatches:
+def gather_transformers(root: str | Path, depth: int=5, extension: str=".py") -> TransformMatches:
     """Gathers all transformers recursively appearing in python files ending with 'extension', including root.
     Guarantees that the returned objects match the Transform members, but not neccessarily that they are Transform subclasses.
     

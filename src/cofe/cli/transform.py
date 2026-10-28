@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import argparse
 from pathlib import Path
+from typing import Union
 
 from cofe.transform.transform import transform_code
 
-type PathLike = str | Path
+PathLike = Union[str, Path]
 
 def get_cli():
     parser = argparse.ArgumentParser(prog="cofe-transform", description="Module to transform python files in the current cofe environment.")
@@ -38,8 +41,7 @@ def main(args):
     parsed = parser.parse_args(args)
     
     if parsed.cmd:
-        match parsed.cmd:
-            case "from":
-                pass
+        if parsed.cmd == "from":
+            pass
     
     
